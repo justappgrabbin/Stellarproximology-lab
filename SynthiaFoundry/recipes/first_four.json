@@ -1,0 +1,59 @@
+{
+  "generation": 0,
+  "state_root": "state",
+  "models": [
+    {
+      "id": "llm_1",
+      "role": "novelty_teacher",
+      "corpus": "corpora/llm_1",
+      "training": {
+        "context": 128,
+        "embedding": 128,
+        "layers": 2,
+        "heads": 4,
+        "batch_size": 8,
+        "epochs": 3,
+        "learning_rate": 0.0003,
+        "max_steps": 500
+      }
+    },
+    {
+      "id": "llm_2",
+      "role": "verification_teacher",
+      "corpus": "corpora/llm_2",
+      "training": {
+        "context": 128,
+        "embedding": 128,
+        "layers": 2,
+        "heads": 4,
+        "batch_size": 8,
+        "epochs": 3,
+        "learning_rate": 0.0003,
+        "max_steps": 500
+      }
+    }
+  ],
+  "tools": [
+    {
+      "id": "tool_1",
+      "role": "source_observer",
+      "capabilities": [
+        "artifact.read",
+        "artifact.hash",
+        "registry.read",
+        "source.enumerate"
+      ]
+    },
+    {
+      "id": "tool_2",
+      "role": "execution_observer",
+      "capabilities": [
+        "workspace.copy",
+        "sandbox.execute",
+        "build.run",
+        "test.run"
+      ]
+    }
+  ],
+  "derived_output": "dna/genesis.json"
+}
