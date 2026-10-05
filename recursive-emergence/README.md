@@ -1,123 +1,186 @@
-# Recursive Emergence v0
+# Recursive Emergence v1
 
-This branch is the minimum executable mechanism for:
+This branch implements the complete local runtime path for the current experiment:
 
 ```
-system instance
-  -> real local Modelmaker dimensional LLMs
-  -> dimensional conditions/seeds
-  -> one shared Pure-Synthia substrate
-  -> primitive reduction + addressing
-  -> peer/swarm interplay
-  -> Pure-Synthia composition
-  -> first arrived higher-scale automaton
-  -> backward provenance to model fingerprints
+local model carriers on cognitive / 2D side
+        |
+        | every action
+        v
+SwarmEmitter
+        |
+        v
+existing Pure-Synthia IntakeGate
+primitive reduction + canonical address + provenance
+        |
+        v
+addressed swarm pieces
+        |
+        v
+ContactRegistry -> EmbodiedField -> EmergentChannels
+        |
+        v
+Pure-Synthia bundle / sequence / graph composition
+        |
+        v
+embodied field form + relationship feedback
+        |
+        v
+carrier memory + local model fitness
+        |
+        +--> descendant Modelmaker candidate
+        |
+        +--> witnessed peer-mesh learning capsule
+        |
+        `--> next cognitive action
 ```
 
-It does **not** claim the full Synthia/Resonance system is assembled. It creates
-and tests the growth spine only.
+There is no hosted inference call in that loop.
 
-## What is reused intact
+## The boundary is now explicit
 
-The files under `vendor/pure-synthia/` are exact copies of the already
-recovered Pure-Synthia lineage in `justappgrabbin/Back-up-` at the commit
-recorded in `SOURCE_LOCK.json`. They include the existing IntakeGate,
-addressing, operators, Automaton, AutomataMesh, FSM composition, cross-scale
-experiment support, and graph trace.
+The LLMs live on the cognitive side. They emit actions. They do not directly
+write embodied state.
 
-The existing `Modelmaker-repair/app.py` remains the model builder. This branch
-calls it rather than creating another trainer.
+Every action is passed through the existing Pure-Synthia intake/addressing
+machinery and is released as microscopic swarm pieces carrying model
+fingerprint, carrier identity, derivation, canonical address, and fractal path.
 
-## What the new glue does
+The embodied field owns contact, cycling, activation, composition, and
+persistent channels. Feedback from that field is what the model carriers learn
+from.
 
-1. `python/build_dimensions.py` calls the existing Modelmaker four times to
-   create four real local models: Movement, Evolution, Being, Design.
-2. Every model gets a `dimension_manifest.json` with a content fingerprint.
-3. `python/emit_seed.py` loads each model **offline** and emits one real
-   condition.
-4. `RecursiveEmergenceRuntime` sends that condition through the existing
-   `IntakeGate` to obtain primitives and an address.
-5. Each dimensional condition becomes a sovereign Automaton on one
-   `AutomataMesh`. Peers are connected by typed contracts; routing does not
-   execute or override another peer.
-6. Existing `o_bundle`, `o_sequence`, and the existing FSM
-   `AutomataComposer` build upward.
-7. `GraphTraceBuilder` records decomposition and composition edges.
-8. The runtime emits `ACCEPT` only when all four real model fingerprints,
-   derivations, primitives, and composition traces are present.
-9. Accepted output can become the parent context for the next generation.
-10. Model candidates are held in per-dimension UCB survival pools. Peer score
-    gossip is recorded as evidence, but never silently overrides local fitness.
+## Contact is not a single hard-coded relation
 
-That last distinction is deliberate: the mesh can teach an instance without
-becoming a central authority.
+`ContactRegistry` currently has executable rules for:
 
-## Local/offline model build
+- common action origin
+- same gate
+- canonical channel relationship
+- one-bit / Hamming-adjacent state
+- shared canonical center
+- exact lexical contact
+- Klein distributional contact learned from repeated contexts
 
-The current Modelmaker builds GPT-2-style causal models from scratch. It does
-not require downloading a pretrained base model. Python packages are local
-software dependencies; the build and inference path sets Hugging Face /
-Transformers offline mode and requires no hosted inference service.
+The registry is open. A recovered Bantu/contact mechanism or another verified
+relational mechanism can be registered without replacing the field runtime.
 
-Prepare four actual corpora, copy `dimensions.example.json`, and replace the
-paths with real local files.
+Repeated crossings are also fed into the existing Pure-Synthia
+`EmergentChannels`: after the existing promotion threshold, the relationship
+itself becomes a persistent composite capability.
 
-```bash
-python3 recursive-emergence/python/build_dimensions.py \
-  --config /path/to/dimensions.json \
-  --output /path/to/models
-```
+## Relationship learning changes the models
 
-The builder writes `/path/to/models/models.json`.
+A carrier retains local embodied experiences and witness-verified peer
+observations. They are included in subsequent local prompts immediately.
 
-Then disconnect the network if desired and run:
+When the configured experience threshold is reached, `EvolutionManager`
+creates a **new Modelmaker descendant artifact** from the preserved canonical
+training corpus plus accumulated relationship experience. The parent model is
+not overwritten. The child records the parent's SHA-256 model fingerprint.
 
-```bash
-node recursive-emergence/run-arrival.mjs \
-  --models /path/to/models/models.json \
-  --generations 1
-```
+The parent and child remain candidates in the carrier's local survival pool.
+The UCB selector explores candidates and local embodied contribution supplies
+their fitness evidence.
 
-For recursive growth after the first proof:
+## Distributed mesh
 
-```bash
-node recursive-emergence/run-arrival.mjs \
-  --models /path/to/models/models.json \
-  --generations 4
-```
+`PeerMeshBridge` exchanges witness-protected learning capsules. A peer capsule
+must match the local carrier identity, dimension, and optional gate before it
+can enter local learning memory. Peer model scores remain evidence rather than
+authority.
 
-Each accepted generation becomes context for the next. The underlying laws and
-source mechanisms are not rewritten by this loop.
+Two dependency-free transports exist:
 
-## Acceptance boundary
+- `BroadcastChannel` for same-origin/local app contexts.
+- `WebRTCPeerTransport` for direct browser/webview data-channel links. Its
+  default ICE configuration uses no hosted STUN/TURN service. A self-hosted ICE
+  configuration can be injected when NAT traversal is required.
 
-An arrival is structurally accepted only when:
+Any other transport implementing `send(message)` can attach to the same
+bridge.
 
-- Movement, Evolution, Being, and Design each came from a real local-model port;
-- each emission carries the SHA-256 fingerprint of its built model artifact;
-- each condition has a real IntakeGate derivation;
-- each condition reduced to at least one primitive;
-- the composed automaton has real states/transitions produced from those
-  primitives;
-- graph-trace contains causal/dependency evidence for the upward composition.
+## Four carriers or a larger field
 
-The contract test intentionally verifies that the runtime **fails** rather than
-inventing a model when any dimension is missing.
+Carrier count is configuration.
 
-Run:
+The minimum baseline is Movement, Evolution, Being, and Design.
+
+A config may declare 64 carrier identities and assign each an explicit gate and
+model key. Those carriers can either:
+
+1. reference 64 independent local model artifacts, or
+2. initially share a smaller set of local model backbones while retaining
+   separate identity, relationship memory, swarm history, and descendant
+   evolution.
+
+The runtime does not silently invent a universal 64-to-4 mapping. If a 64
+carrier field is used, that mapping is explicit data.
+
+## Local persistent inference
+
+`LocalPythonModelPort` starts a persistent local worker for each model
+artifact. The model and tokenizer load once, then accept JSONL inference
+requests. Multiple carriers referencing the same model key share that resident
+backbone instead of spawning and reloading a model for every action.
+
+The worker uses `local_files_only=True` and forces Transformers/Hugging Face
+offline mode.
+
+## Canonical training corpora
+
+A deterministic corpus builder is included so the experiment no longer needs
+hand-written fake dimension prompts:
 
 ```bash
 cd recursive-emergence
-npm test
+node build-corpora.mjs --output ./local-corpora
 ```
 
-## Recursive emergence, not uncontrolled self-editing
+It derives four corpora from explicit existing Pure-Synthia dimensional
+metadata, primitive attributions, dimension vocabularies, shared operators,
+named transitions, scale law, and channel topology. It does not invent an
+untested gate-to-dimension assignment.
 
-Conway Automaton contributes the lineage/audit idea, Tribler contributes
-survival competition and gossip, and Dream Machine contributes evidence-gated
-evolution. v0 therefore grows state/structure recursively while preserving the
-kernel and evidence boundary. Source-code mutation is a later candidate
-capability and must pass the same provenance/evaluation gate before it can ever
-be promoted.
+Build the actual local models with the existing Modelmaker:
 
-See `SOURCE_LOCK.json` for exact source revisions and licensing boundary.
+```bash
+python3 python/build_dimensions.py \
+  --config ./local-corpora/dimensions.json \
+  --output ./local-models
+```
+
+Then copy `system.example.json`, set local paths, and run:
+
+```bash
+node run-system.mjs \
+  --config ./system.local.json \
+  --steps 1 \
+  --stimulus "initial condition"
+```
+
+Increasing `--steps` closes the recursive loop. With evolution enabled,
+relationship experience can materialize new descendant local models.
+
+## Persistence
+
+Runtime state is never maintained as one destructively overwritten save file.
+`AppendOnlyStateStore` writes versioned immutable snapshots. Model evolution
+writes new child directories. Retired swarm pieces retain provenance in the
+field/graph history.
+
+## Verification boundary
+
+The JavaScript modules have been syntax-checked as modules and contract tests
+are included for embodied contact, append-only persistence, peer transport,
+contact multiplicity, model-survival selection, and refusal to fabricate
+missing model artifacts.
+
+The one check that cannot be truthfully marked complete from this ChatGPT
+environment is a real four-model training + inference run: this environment
+does not contain the local `transformers` / `tokenizers` packages, and the
+available remote compute job path is not enabled for this account. The branch
+therefore does not fabricate an ARRIVAL result. Run the commands above in the
+self-hosted app environment to produce that evidence.
+
+See `IMPLEMENTATION_CONTRACT.json` and `SOURCE_LOCK.json`.

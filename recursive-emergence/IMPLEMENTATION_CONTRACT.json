@@ -1,0 +1,44 @@
+{
+  "schema": "stellar.recursive-emergence.implementation.v1",
+  "status": "runtime-implemented-validation-pending-real-model-run",
+  "lockedInvariants": [
+    "Local LLM model artifacts live on the cognitive/2D side.",
+    "Every carrier action releases addressed swarm pieces before it can affect the embodied field.",
+    "LLMs do not directly mutate the embodied field.",
+    "The embodied field cycles swarm pieces through registered contact rules, graph traces, compositions, activation changes, and emergent channels.",
+    "Embodied feedback returns to the originating carriers as relationship experience.",
+    "Carrier relationship experience persists across restarts and is eligible to become descendant-model training material.",
+    "Descendant models are new artifacts with parent fingerprints; parent artifacts are preserved.",
+    "Peer-mesh learning capsules are witness-checked and identity-matched before becoming local learning observations.",
+    "Peer evidence never silently replaces local model fitness.",
+    "Runtime state is saved as append-only versioned snapshots.",
+    "No hosted inference, Hugging Face API, GitHub API, Supabase, or central server is required after local model artifacts and app dependencies are present.",
+    "Carrier count is configuration, not a law. Four dimensional carriers are the minimum baseline; larger carrier fields can be declared without changing the runtime."
+  ],
+  "planes": {
+    "cognitive2D": [
+      "ModelCarrier",
+      "LocalPythonModelPort",
+      "SurvivalPool",
+      "EvolutionManager"
+    ],
+    "crossing": [
+      "SwarmEmitter",
+      "IntakeGate",
+      "canonical addressing",
+      "GraphTraceBuilder"
+    ],
+    "embodied": [
+      "EmbodiedField",
+      "ContactRegistry",
+      "EmergentChannels",
+      "AutomataMesh",
+      "Pure-Synthia operators"
+    ],
+    "distributed": [
+      "PeerMeshBridge",
+      "WebRTCPeerTransport",
+      "witnessed learning capsules"
+    ]
+  }
+}
