@@ -316,6 +316,16 @@ export class EmbodiedSystemRuntime {
     };
   }
 
+  close() {
+    const ports = new Set(this.modelPortsById.values());
+    for (const carrier of this.carriers.values()) {
+      for (const row of carrier.pool.candidates.values()) ports.add(row.port);
+    }
+    for (const port of ports) {
+      try { port.close?.(); } catch {}
+    }
+  }
+
   async run({ steps = 1, stimulus = '' } = {}) {
     const reports = [];
     for (let i = 0; i < Math.max(1, Number(steps) || 1); i += 1) {

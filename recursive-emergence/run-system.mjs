@@ -38,8 +38,13 @@ const runtime = new EmbodiedSystemRuntime({
   maxPiecesPerAction: config.maxPiecesPerAction || 96,
 });
 
-const result = await runtime.run({
-  steps: Number(arg('--steps', config.steps || 1)),
-  stimulus: arg('--stimulus', config.stimulus || ''),
-});
+let result;
+try {
+  result = await runtime.run({
+    steps: Number(arg('--steps', config.steps || 1)),
+    stimulus: arg('--stimulus', config.stimulus || ''),
+  });
+} finally {
+  runtime.close();
+}
 console.log(JSON.stringify(result, null, 2));
