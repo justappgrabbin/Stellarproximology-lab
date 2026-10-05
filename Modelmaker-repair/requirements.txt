@@ -1,6 +1,6 @@
-gradio>=5.0,<7
+gradio==6.8.0
 huggingface_hub>=0.28
 safetensors>=0.4
 tokenizers>=0.20
 torch>=2.2
-transformers>=4.46,<6
+transformers>=4.46,<5
