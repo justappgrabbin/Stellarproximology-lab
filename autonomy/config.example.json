@@ -1,0 +1,9 @@
+{
+  "models": {
+    "Movement": "",
+    "Evolution": "",
+    "Being": "",
+    "Design": ""
+  },
+  "sandbox_image": "python:3.12-slim"
+}

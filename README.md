@@ -74,3 +74,18 @@ ISO standard. Binary/ASCII/Unicode/NATO spelling are representations, not model
 dimensions. No I Ching sequence or linguistic grammar is silently substituted.
 
 Repair checks: `python -m unittest discover -s tests -v`.
+
+The [four-perspective capability builder](autonomy/README.md) adds a research,
+hypothesis, code, isolated verification, and reflection loop. Its first concrete
+job builds the missing 64 units for each of four dimensions, with a 256-unit
+catalog promoted only when all four contracts pass. It has a persistent queue
+worker and a real Hugging Face inference adapter; live inference needs chosen
+model IDs and a runtime inference credential. The offline replay demonstration
+tests the engine and sandbox without pretending that a live LLM ran.
+
+The [native Android core](android/README.md) packages a local backend, SQLite/RAG,
+relationship graph and trainable neural encoder, foreground worker, GitHub/MCP
+hands, and a phone UI into an APK. This is the cellphone deliverable; the
+Docker-based Python builder is a separate development tool. The first APK can
+grow bounded declarative relationship rules and retain its own memory. It does
+not bundle four pretrained LLM weights or unrestricted self-rewriting code.
