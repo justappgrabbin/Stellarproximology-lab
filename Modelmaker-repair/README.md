@@ -4,7 +4,7 @@ Non-destructive repair package for the Hugging Face Space `stellarproximology/Mo
 
 ## Install
 
-1. Copy `app.py` and `requirements.txt` into the **root** of the existing Hugging Face Modelmaker Space.
+1. Copy `app.py`, `seed.py`, `swarm.js`, and `requirements.txt` into the **root** of the existing Hugging Face Modelmaker Space.
 2. Do not delete existing Modelmaker files.
 3. If Hugging Face still reports **No application file**, use the YAML in `README_FRONTMATTER.txt` at the very top of the Space's existing `README.md`.
 4. Optional: add a Hugging Face write token as a Space secret named `HF_TOKEN` to allow Modelmaker to publish trained models.

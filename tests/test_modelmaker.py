@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import tempfile
+import sys
 import unittest
 import zipfile
 from pathlib import Path
@@ -10,6 +11,7 @@ import torch
 from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "Modelmaker-repair"))
 spec = importlib.util.spec_from_file_location("trainer", ROOT / "Modelmaker-repair" / "app.py")
 trainer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(trainer)

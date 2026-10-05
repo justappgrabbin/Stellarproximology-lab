@@ -34,7 +34,30 @@ interactions produce swarm units. The user's stated mappings are:
 | Trigram | 2 = 1 | Mind: transpersonal thought |
 | Hexagram | 1 = 1 | Body: personal action |
 
-Whether these are three partitions of the same six lines is pending confirmation.
+These are three views of the same six binary lines, confirmed by the user.
+`Modelmaker-repair/seed.py` implements the primitive, the three views, lossless
+UTF-8/Unicode representations, ASCII where applicable, and NATO spelling for
+Latin letters. Bit order is bottom-to-top; no King Wen ordering is implied.
+
+The Gradio seed workbench composes primitives into a 2D website and exports HTML.
+The exported website renders its content as particles attracted to text and
+six-line targets, with pointer repulsion. Users can add primitives and the field
+rebuilds. The standalone page runs without LLM calls and saves compositions in
+browser local storage when available. The Gradio preview is a static target view.
+This is an attraction/repulsion particle simulation, not a particle swarm
+optimization solver. Rendering pauses in hidden tabs. It is not a 24/7 server
+worker or a system that modifies its own executable code.
+
+`seed.cycle(context, dimensions, history)` requires exactly four callable model
+adapters. They each see the same context and prior history, and must return
+`{"bits":"010101","text":"plain expression"}`. All four validated outputs
+are retained in the next context cycle; failure leaves caller history unchanged.
+The tests use adapter doubles. Live LLM adapters are not yet connected.
+
+The four LLM dimensions are Movement, Evolution, Being, Design. Space is their
+shared swarm environment. Model identities are unassigned; live model adapters
+are the remaining integration step, rather than silently adding extra models.
+
 TCS is also unresolved; it is not implemented as TypeScript or assumed to be an
 ISO standard. Binary/ASCII/Unicode/NATO spelling are representations, not model
 dimensions. No I Ching sequence or linguistic grammar is silently substituted.

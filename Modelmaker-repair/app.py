@@ -14,6 +14,7 @@ import torch
 from huggingface_hub import HfApi
 from tokenizers import ByteLevelBPETokenizer
 from transformers import GPT2Config, GPT2LMHeadModel, GPT2TokenizerFast
+from seed import build_seed
 
 APP_TITLE = "Modelmaker"
 DEFAULT_NAMESPACE = "stellarproximology"
@@ -333,6 +334,23 @@ def build_ui():
         gr.Markdown(
             "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
         )
+
+        with gr.Accordion("Six-line seed: compose a 2D website", open=False):
+            gr.Markdown(
+                "Three bigrams = heart (direction / social); two trigrams = mind "
+                "(transpersonal thought); one hexagram = body (personal action). "
+                "Lines run bottom to top. This is a manual primitive workbench; "
+                "the four LLM dimensions are not connected yet. TCS remains undefined."
+            )
+            seed_state = gr.State([])
+            seed_bits = gr.Textbox(label="Six binary lines, bottom to top", value="010101")
+            seed_text = gr.Textbox(label="Primitive context / expression", lines=3)
+            seed_build = gr.Button("Compose another primitive")
+            seed_views = gr.JSON(label="Heart / mind / body and encodings")
+            seed_preview = gr.HTML(label="2D composition")
+            seed_artifact = gr.File(label="Download composed website")
+            seed_build.click(build_seed, inputs=[seed_bits, seed_text, seed_state],
+                             outputs=[seed_state, seed_views, seed_preview, seed_artifact])
 
     return demo
 
