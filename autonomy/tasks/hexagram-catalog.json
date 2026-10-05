@@ -1,0 +1,8 @@
+{
+  "contract": "hexagram-catalog-v1",
+  "goal": "Build a dimension-specific 64-unit catalog from all six-line binary patterns. Retain three heart bigrams, two mind trigrams, one body hexagram, and the dimension's own perspective. Together the four catalogs form 256 contributors to emergent Space. Do not invent TCS, Chinese glosses, or a King Wen sequence.",
+  "sources": [
+    {"id": "dimension-profiles", "path": "../../Modelmaker-repair/seed.py"},
+    {"id": "lab-context", "path": "../../README.md"}
+  ]
+}

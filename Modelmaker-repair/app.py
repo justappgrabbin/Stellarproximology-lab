@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import math
 import os
-import shutil
 import tempfile
 import traceback
 import zipfile
@@ -15,6 +14,7 @@ import torch
 from huggingface_hub import HfApi
 from tokenizers import ByteLevelBPETokenizer
 from transformers import GPT2Config, GPT2LMHeadModel, GPT2TokenizerFast
+from seed import build_seed, DIMENSIONS, SPACE, SOURCE_ORDERS
 
 APP_TITLE = "Modelmaker"
 DEFAULT_NAMESPACE = "stellarproximology"
@@ -142,6 +142,18 @@ def train_model(
 ):
     work_root = Path(tempfile.mkdtemp(prefix="modelmaker-"))
     try:
+        for label, value in (("vocab_size", vocab_size), ("context_length", context_length),
+                             ("layers", layers), ("heads", heads),
+                             ("embedding_size", embedding_size), ("epochs", epochs),
+                             ("batch_size", batch_size)):
+            if not math.isfinite(float(value)) or int(value) != float(value) or int(value) <= 0:
+                raise ValueError(f"{label} must be a positive integer.")
+        if int(context_length) < 16:
+            raise ValueError("Context length must be at least 16.")
+        if not math.isfinite(float(learning_rate)) or float(learning_rate) <= 0:
+            raise ValueError("Learning rate must be positive and finite.")
+        if int(embedding_size) % int(heads) != 0:
+            raise ValueError("Embedding size must divide evenly by the number of attention heads.")
         name = _safe_name(model_name)
         model_dir = work_root / name
         model_dir.mkdir(parents=True, exist_ok=True)
@@ -159,9 +171,6 @@ def train_model(
 
         ids = tokenizer.encode(text, add_special_tokens=False)
         sequences = _make_sequences(ids, int(context_length))
-
-        if int(embedding_size) % int(heads) != 0:
-            raise ValueError("Embedding size must divide evenly by the number of attention heads.")
 
         config = GPT2Config(
             vocab_size=len(tokenizer),
@@ -194,11 +203,14 @@ def train_model(
                 idx = permutation[start : start + int(batch_size)]
                 batch = sequences[idx].to(device)
                 x = batch[:, :-1]
-                y = batch[:, 1:]
 
                 optimizer.zero_grad(set_to_none=True)
-                out = model(input_ids=x, labels=y)
+                # GPT2 shifts labels internally: passing next-token labels here
+                # would train it to predict two tokens ahead.
+                out = model(input_ids=x, labels=x)
                 loss = out.loss
+                if not torch.isfinite(loss):
+                    raise ValueError("Training loss became non-finite; lower the learning rate or review the corpus.")
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
@@ -258,7 +270,7 @@ def train_model(
 
 
 def build_ui():
-    with gr.Blocks(title=APP_TITLE, theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(title=APP_TITLE) as demo:
         gr.Markdown(
             "# 🧬 Modelmaker\n"
             "Build a compact causal LLM from your own material. The result is saved in Hugging Face `save_pretrained()` format."
@@ -316,11 +328,35 @@ def build_ui():
                 push_to_hub,
             ],
             outputs=[status, artifact],
+            concurrency_limit=1,
         )
 
         gr.Markdown(
             "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
         )
+
+        with gr.Accordion("Six-line seed: compose a 2D website", open=False):
+            gr.Markdown(
+                "Three bigrams = heart (direction / social); two trigrams = mind "
+                "(transpersonal thought); one hexagram = body (personal action). "
+                "Lines run bottom to top. This is a manual primitive workbench; "
+                "the four LLM dimensions are not connected yet. TCS remains undefined."
+            )
+            seed_state = gr.State([])
+            seed_bits = gr.Textbox(label="Six binary lines, bottom to top", value="010101")
+            seed_text = gr.Textbox(label="Primitive context / expression", lines=3)
+            seed_build = gr.Button("Compose another primitive")
+            seed_views = gr.JSON(label="Heart / mind / body and encodings")
+            seed_preview = gr.HTML(label="2D composition")
+            seed_artifact = gr.File(label="Download composed website")
+            seed_build.click(build_seed, inputs=[seed_bits, seed_text, seed_state],
+                             outputs=[seed_state, seed_views, seed_preview, seed_artifact])
+        with gr.Accordion("Four LLM perspectives and emergent Space", open=False):
+            gr.Markdown("Movement, Evolution, Being, Design are four separate perspectives. "
+                        "Space is their shared swarm environment. Reference orders and differing "
+                        "keynotes are preserved; no vote forces them to agree.")
+            gr.JSON(value={"dimensions": DIMENSIONS, "space": SPACE, "source_orders": SOURCE_ORDERS},
+                    label="Reference mappings")
 
     return demo
 

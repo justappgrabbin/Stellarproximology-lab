@@ -1,0 +1,1 @@
+"""Four-perspective capability builder."""

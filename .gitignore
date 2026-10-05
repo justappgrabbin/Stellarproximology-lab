@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+autonomy-workspace/
+autonomy/config.local.json
+.env
+.env.local
+android/build/
+android/*.keystore

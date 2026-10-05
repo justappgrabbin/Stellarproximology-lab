@@ -1,6 +1,6 @@
 NON-DESTRUCTIVE MODELMAKER REPAIR
 
-1. Add app.py and requirements.txt to the ROOT of the existing Hugging Face Space.
+1. Add app.py, seed.py, swarm.js, and requirements.txt to the ROOT of the existing Hugging Face Space.
 2. Do not delete any existing Modelmaker files.
 3. If Hugging Face still says "No application file", repair only the YAML frontmatter at the top of README.md using README_FRONTMATTER.txt.
 4. Optional: to let Modelmaker publish models directly, add a Hugging Face write token to the Space as a secret named HF_TOKEN.
