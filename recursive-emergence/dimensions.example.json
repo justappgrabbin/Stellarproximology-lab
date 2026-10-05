@@ -1,0 +1,22 @@
+{
+  "Movement": {
+    "corpus": "/absolute/path/to/movement.txt",
+    "name": "synthia-movement",
+    "seed": 1001
+  },
+  "Evolution": {
+    "corpus": "/absolute/path/to/evolution.txt",
+    "name": "synthia-evolution",
+    "seed": 1002
+  },
+  "Being": {
+    "corpus": "/absolute/path/to/being.txt",
+    "name": "synthia-being",
+    "seed": 1003
+  },
+  "Design": {
+    "corpus": "/absolute/path/to/design.txt",
+    "name": "synthia-design",
+    "seed": 1004
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema": "stellar.recursive-emergence.sources.v1",
+  "sources": [
+    {
+      "repo": "justappgrabbin/Stellarproximology-lab",
+      "commit": "de9d32af4155902dece2952abf20a92916080e30",
+      "role": "Modelmaker-repair, owner source"
+    },
+    {
+      "repo": "justappgrabbin/Back-up-",
+      "commit": "1c45318a668de3bb3c54ae488b3d5f4109d1ba6b",
+      "path": "vendor/kimi-agent-automata-state-space-merge/pure-synthia-automata",
+      "role": "Exact Pure-Synthia State-Space/Automata source copied intact into vendor/"
+    },
+    {
+      "repo": "Tribler/superorganism-experiment",
+      "commit": "3ea06ed9c9aa73c82e89ff8c29db8be4926f7ccf",
+      "role": "Concept source: decentralized model competition, score gossip, peer fabric, trust"
+    },
+    {
+      "repo": "Conway-Research/automaton",
+      "commit": "d8f816881fd24b6f5e3d616e59edec387a447667",
+      "role": "Concept source: continuous agent loop, lineage, self-modification audit, child lifecycle"
+    },
+    {
+      "repo": "ruvnet/dream-machine",
+      "commit": "23a577082aad39750051dc7ef0ec9d0d72900adf",
+      "role": "Concept source: evidence-gated evolution, durable ledger, witness, evaluation before promotion"
+    },
+    {
+      "repo": "huggingface.co/spaces/stellarproximology/Modelmaker",
+      "observed": "2026-10-05",
+      "role": "Canonical self-hosted Modelmaker Space"
+    }
+  ],
+  "licenseBoundary": "Third-party repositories are concept references only in this branch. Their source is not copied. Exact vendored code comes only from the user's Pure-Synthia backup lineage."
+}
