@@ -257,11 +257,39 @@ def train_model(
         return f"### Build failed\n**{type(exc).__name__}:** {exc}\n\n```text\n{detail}\n```", None
 
 
+def train_visual_package(dataset, epochs, size, progress=gr.Progress()):
+    from visual_models import train_visual
+    work = Path(tempfile.mkdtemp(prefix="modelmaker-visual-"))
+    try:
+        if not dataset:
+            raise ValueError("Upload a visual dataset ZIP with manifest.json and paired frames")
+        source = Path(getattr(dataset, "name", None) or str(dataset))
+        data = work / "dataset"
+        data.mkdir()
+        with zipfile.ZipFile(source) as archive:
+            if sum(entry.file_size for entry in archive.infolist()) > 512 * 1024 * 1024:
+                raise ValueError("Expanded dataset exceeds 512 MB")
+            for entry in archive.infolist():
+                target = (data / entry.filename).resolve()
+                if not target.is_relative_to(data.resolve()) or (entry.external_attr >> 16) & 0o170000 == 0o120000:
+                    raise ValueError("Unsafe dataset archive entry")
+            archive.extractall(data)
+        progress(0.1, desc="Training photo-conditioned animation model")
+        info = train_visual(str(data / "manifest.json"), str(work / "visual"), int(epochs), int(size))
+        package = work / "visual-model.zip"
+        _zip_dir(work / "visual", package)
+        progress(1, desc="Visual model exported")
+        return (f"Trained on {info['samples']} frames; final reconstruction loss {info['loss'][-1]:.6f}. "
+                "Package includes weights, runtime metadata, TorchScript, and ONNX. Coverage is limited to the supplied training examples."), str(package)
+    except Exception as exc:
+        return f"Visual build failed: {type(exc).__name__}: {exc}", None
+
+
 def build_ui():
     with gr.Blocks(title=APP_TITLE, theme=gr.themes.Soft()) as demo:
         gr.Markdown(
             "# 🧬 Modelmaker\n"
-            "Build a compact causal LLM from your own material. The result is saved in Hugging Face `save_pretrained()` format."
+            "Train specialized text models or photo-conditioned visual animation models from your own material."
         )
 
         with gr.Row():
@@ -317,6 +345,16 @@ def build_ui():
             ],
             outputs=[status, artifact],
         )
+
+        with gr.Accordion("Visual animation models", open=True):
+            gr.Markdown("Train moving frames conditioned on identity, theme, action, and animation phase. Upload paired examples; this trainer does not create a general image generator from a single photo.")
+            visual_dataset = gr.File(label="Visual dataset ZIP (manifest.json + images)", file_types=[".zip"])
+            visual_epochs = gr.Slider(1, 500, value=10, step=1, label="Visual training epochs")
+            visual_size = gr.Dropdown([32, 64, 128, 256], value=64, label="Frame resolution")
+            visual_build = gr.Button("Train visual animation model")
+            visual_status = gr.Markdown()
+            visual_artifact = gr.File(label="Visual runtime model package")
+            visual_build.click(train_visual_package, [visual_dataset, visual_epochs, visual_size], [visual_status, visual_artifact])
 
         gr.Markdown(
             "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
