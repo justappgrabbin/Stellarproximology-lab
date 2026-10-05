@@ -11,6 +11,8 @@ export class SurvivalPool {
     if (port.dimension !== this.dimension) throw new Error('candidate dimension mismatch');
     if (!this.candidates.has(port.id)) {
       this.candidates.set(port.id, { port, pulls: 0, reward: 0, evidence: [] });
+    } else {
+      this.candidates.get(port.id).port = port;
     }
     return port;
   }
@@ -25,6 +27,15 @@ export class SurvivalPool {
     return this.stats(candidateId);
   }
 
+  restore(candidateId, saved = {}) {
+    const row = this.candidates.get(candidateId);
+    if (!row) return false;
+    row.pulls = Math.max(0, Number(saved.pulls) || 0);
+    row.reward = Math.max(0, Number(saved.reward) || 0);
+    row.evidence = Array.isArray(saved.evidence) ? [...saved.evidence] : [];
+    return true;
+  }
+
   choose() {
     const rows = [...this.candidates.entries()].sort(([a], [b]) => a.localeCompare(b));
     if (!rows.length) throw new Error(`no model candidates registered for ${this.dimension}`);
@@ -34,7 +45,7 @@ export class SurvivalPool {
     let best = null;
     for (const [id, row] of rows) {
       const mean = row.reward / row.pulls;
-      const ucb = mean + Math.sqrt((2 * Math.log(total)) / row.pulls);
+      const ucb = mean + Math.sqrt((2 * Math.log(Math.max(1, total))) / row.pulls);
       if (!best || ucb > best.ucb || (ucb === best.ucb && id < best.id)) best = { id, ucb, port: row.port };
     }
     return best.port;
@@ -46,9 +57,20 @@ export class SurvivalPool {
     return Object.freeze({
       id: candidateId,
       pulls: row.pulls,
+      reward: row.reward,
       meanReward: row.pulls ? row.reward / row.pulls : null,
       evidenceCount: row.evidence.length,
     });
+  }
+
+  exportState() {
+    return [...this.candidates.entries()].map(([id, row]) => ({
+      id,
+      modelDir: row.port.modelDir || null,
+      pulls: row.pulls,
+      reward: row.reward,
+      evidence: row.evidence,
+    }));
   }
 
   gossipSummary() {

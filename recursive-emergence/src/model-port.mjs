@@ -21,6 +21,7 @@ export class LocalPythonModelPort {
     }
     if (!manifest.modelFingerprint) throw new Error(`model manifest at ${modelDir} lacks modelFingerprint`);
     this.kind = 'local-model';
+    this.artifactVerified = true;
     this.modelDir = modelDir;
     this.python = python;
     this.emitter = emitter;

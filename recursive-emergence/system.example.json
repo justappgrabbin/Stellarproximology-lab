@@ -1,0 +1,27 @@
+{
+  "python": "python3",
+  "models": {
+    "movement": "/absolute/path/to/models/Movement",
+    "evolution": "/absolute/path/to/models/Evolution",
+    "being": "/absolute/path/to/models/Being",
+    "design": "/absolute/path/to/models/Design"
+  },
+  "carriers": [
+    { "id": "Movement", "dimension": "Movement", "model": "movement" },
+    { "id": "Evolution", "dimension": "Evolution", "model": "evolution" },
+    { "id": "Being", "dimension": "Being", "model": "being" },
+    { "id": "Design", "dimension": "Design", "model": "design" }
+  ],
+  "stateDir": "/absolute/path/to/local-runtime-state",
+  "field": {
+    "ticks": 2,
+    "ttlSteps": 6,
+    "maxActivePieces": 4096
+  },
+  "maxPiecesPerAction": 96,
+  "evolution": {
+    "enabled": true,
+    "threshold": 16,
+    "modelmakerApp": "/absolute/path/to/Stellarproximology-lab/Modelmaker-repair/app.py"
+  }
+}

@@ -80,19 +80,29 @@ def main() -> int:
         except Exception:
             pass
 
+        params = {
+            "vocab_size": int(spec.get("vocab_size", 4096)),
+            "context_length": int(spec.get("context_length", 128)),
+            "layers": int(spec.get("layers", 2)),
+            "heads": int(spec.get("heads", 4)),
+            "embedding_size": int(spec.get("embedding_size", 256)),
+            "epochs": int(spec.get("epochs", 2)),
+            "batch_size": int(spec.get("batch_size", 4)),
+            "learning_rate": float(spec.get("learning_rate", 0.0003)),
+        }
         name = spec.get("name", f"synthia-{dimension.lower()}")
         summary, zip_path = modelmaker.train_model(
             name,
             corpus,
             [],
-            int(spec.get("vocab_size", 4096)),
-            int(spec.get("context_length", 128)),
-            int(spec.get("layers", 2)),
-            int(spec.get("heads", 4)),
-            int(spec.get("embedding_size", 256)),
-            int(spec.get("epochs", 2)),
-            int(spec.get("batch_size", 4)),
-            float(spec.get("learning_rate", 0.0003)),
+            params["vocab_size"],
+            params["context_length"],
+            params["layers"],
+            params["heads"],
+            params["embedding_size"],
+            params["epochs"],
+            params["batch_size"],
+            params["learning_rate"],
             False,
             progress=QuietProgress(),
         )
@@ -101,23 +111,25 @@ def main() -> int:
 
         destination = args.output / dimension
         if destination.exists():
-            shutil.rmtree(destination)
+            raise FileExistsError(f"Refusing to overwrite existing model directory: {destination}")
         destination.mkdir(parents=True)
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(destination)
 
         fingerprint = fingerprint_dir(destination)
         manifest = {
-            "schema": "stellar.modelmaker.dimension.v1",
+            "schema": "stellar.modelmaker.dimension.v2",
             "builder": "stellarproximology/Modelmaker",
             "dimension": dimension,
             "modelId": name,
             "modelFingerprint": fingerprint,
             "parentModelFingerprint": spec.get("parent_model_fingerprint"),
             "trainingCorpus": corpus_path.name,
+            "trainingCorpusPath": str(corpus_path),
             "trainingCorpusSha256": hashlib.sha256(corpus.encode()).hexdigest(),
             "seed": seed,
             "offlineBuild": True,
+            "buildParams": params,
         }
         (destination / "dimension_manifest.json").write_text(
             json.dumps(manifest, indent=2) + "\n",

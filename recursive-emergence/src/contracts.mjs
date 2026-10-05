@@ -9,8 +9,8 @@ export function assertDimension(dimension) {
 }
 
 export function assertLocalModelPort(port) {
-  if (!port || port.kind !== 'local-model') {
-    throw new TypeError('A real local-model port is required; synthetic/fixture ports are not accepted for arrival.');
+  if (!port || port.kind !== 'local-model' || port.artifactVerified !== true) {
+    throw new TypeError('A verified local-model artifact port is required.');
   }
   assertDimension(port.dimension);
   if (typeof port.emitCondition !== 'function') {
