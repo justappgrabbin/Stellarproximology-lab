@@ -14,7 +14,7 @@ import torch
 from huggingface_hub import HfApi
 from tokenizers import ByteLevelBPETokenizer
 from transformers import GPT2Config, GPT2LMHeadModel, GPT2TokenizerFast
-from seed import build_seed
+from seed import build_seed, DIMENSIONS, SPACE, SOURCE_ORDERS
 
 APP_TITLE = "Modelmaker"
 DEFAULT_NAMESPACE = "stellarproximology"
@@ -351,6 +351,12 @@ def build_ui():
             seed_artifact = gr.File(label="Download composed website")
             seed_build.click(build_seed, inputs=[seed_bits, seed_text, seed_state],
                              outputs=[seed_state, seed_views, seed_preview, seed_artifact])
+        with gr.Accordion("Four LLM perspectives and emergent Space", open=False):
+            gr.Markdown("Movement, Evolution, Being, Design are four separate perspectives. "
+                        "Space is their shared swarm environment. Reference orders and differing "
+                        "keynotes are preserved; no vote forces them to agree.")
+            gr.JSON(value={"dimensions": DIMENSIONS, "space": SPACE, "source_orders": SOURCE_ORDERS},
+                    label="Reference mappings")
 
     return demo
 

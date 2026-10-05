@@ -14,6 +14,51 @@ NATO = dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", (
     "November Oscar Papa Quebec Romeo Sierra Tango Uniform Victor Whiskey X-ray Yankee Zulu"
 ).split()))
 
+# Conceptual mappings from the user's five supplied reference screenshots.
+# These orders describe different views, not a single ranking of authority.
+SOURCE_ORDERS = {
+    "five_dimension_list": ["Being", "Movement", "Space", "Design", "Evolution"],
+    "macrocosmic_table": ["Movement", "Evolution", "Being", "Design", "Space"],
+    "crystals_and_monopole": ["Space", "Evolution", "Being", "Design", "Movement"],
+    "four_dimension_chart": ["Movement", "Evolution", "Being", "Design"],
+    "singularity_formula_description": ["Movement", "Being", "Evolution", "Design"],
+}
+DIMENSIONS = {
+    "Movement": {
+        "human_view": "Individuality", "component": "Magnetic Monopole",
+        "chain": ["Movement", "Energy", "Creation", "Seeing", "Landscape", "Environment"],
+        "human_nature": ["Activity", "Reaction", "Limitation", "Perspective", "Relation"],
+        "keynotes": {"crystals_and_monopole": "I Create", "macrocosmic_table": "I Define"},
+    },
+    "Evolution": {
+        "human_view": "The Mind", "component": "Personality Crystal",
+        "chain": ["Evolution", "Gravity", "Memory", "Taste", "Love", "Light"],
+        "human_nature": ["Character", "Separation", "Nature", "Integration", "Spirit"],
+        "keynotes": {"crystals_and_monopole": "I Remember", "macrocosmic_table": "I Remember"},
+    },
+    "Being": {
+        "human_view": "The Body", "component": "The Atom",
+        # The reference includes the incomplete phrase 'Matter is'. Keep it.
+        "chain": ["Being is Matter", "Matter is", "Matter is Touch", "Touch is Sex", "Sex is Survival"],
+        "human_nature": ["Biology", "Chemistry", "Objectivity", "Geometry", "Trajectory"],
+        "keynotes": {"crystals_and_monopole": "I Am", "macrocosmic_table": "I am"},
+        "component_views": {"singularity_formula_description": "Quarks", "post_big_bang": "Atomic"},
+    },
+    "Design": {
+        "human_view": "The Ego", "component": "Design Crystal",
+        "chain": ["Design", "Structure", "Progress", "Smell", "Life", "Art"],
+        "human_nature": ["Homo Sapiens", "Growth", "Decay", "Continuity", "Manifestation"],
+        "keynotes": {"crystals_and_monopole": "I Design", "macrocosmic_table": "I Design"},
+    },
+}
+SPACE = {
+    "human_view": "Personality", "component": "Personality Crystal",
+    "chain": ["Space", "Form", "Illusion", "Hearing", "Music", "Freedom"],
+    "human_nature": ["Type", "Fantasy", "Subjectivity", "Rhythm", "Timing"],
+    "keynotes": {"crystals_and_monopole": "I Communicate", "macrocosmic_table": "I Think"},
+    "runtime_role": "Emergent swarm environment; not a fifth LLM",
+}
+
 
 @dataclass(frozen=True)
 class Primitive:
@@ -56,9 +101,14 @@ def cycle(context: str, dimensions: list[Callable], history: list[dict] | None =
     prompt = {"context": context, "history": prior,
               "output_schema": {"bits": "six 0/1 characters", "text": "plain text"}}
     primitives = []
-    for dimension in dimensions:
-        response = dimension(json.loads(json.dumps(prompt, ensure_ascii=False)))
-        primitives.append(Primitive(response["bits"], response["text"]).as_dict())
+    for name, dimension in zip(DIMENSIONS, dimensions):
+        model_prompt = json.loads(json.dumps(prompt, ensure_ascii=False))
+        model_prompt["dimension"] = {"name": name, **DIMENSIONS[name]}
+        model_prompt["source_orders"] = SOURCE_ORDERS
+        response = dimension(model_prompt)
+        primitive = Primitive(response["bits"], response["text"]).as_dict()
+        primitive["dimension"] = name
+        primitives.append(primitive)
     return prior + [{"context": context, "primitives": primitives}]
 
 

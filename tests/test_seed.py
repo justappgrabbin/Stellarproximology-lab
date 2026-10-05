@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Modelmaker-repair"))
-from seed import Primitive, build_seed, cycle
+from seed import Primitive, build_seed, cycle, DIMENSIONS, SPACE, SOURCE_ORDERS
 
 
 class SeedTests(unittest.TestCase):
@@ -27,9 +27,21 @@ class SeedTests(unittest.TestCase):
         result = cycle("Build a greeting", [adapter] * 4, history)
         self.assertEqual(received, ["Build a greeting"] * 4)
         self.assertEqual(len(result[0]["primitives"]), 4)
+        self.assertEqual([p["dimension"] for p in result[0]["primitives"]], list(DIMENSIONS))
         self.assertEqual(history, [])
         with self.assertRaises(ValueError):
             cycle("context", [adapter] * 5)
+
+    def test_disagreement_and_source_orders_are_preserved(self):
+        adapters = [lambda prompt, i=i: {"bits": f"{i:06b}", "text": prompt["dimension"]["name"]}
+                    for i in range(4)]
+        result = cycle("same interaction", adapters)[0]["primitives"]
+        self.assertEqual(len({p["bits"] for p in result}), 4)
+        self.assertEqual(SOURCE_ORDERS["five_dimension_list"][0], "Being")
+        self.assertEqual(SOURCE_ORDERS["macrocosmic_table"][0], "Movement")
+        self.assertEqual(DIMENSIONS["Movement"]["keynotes"]["crystals_and_monopole"], "I Create")
+        self.assertEqual(DIMENSIONS["Movement"]["keynotes"]["macrocosmic_table"], "I Define")
+        self.assertEqual(SPACE["keynotes"]["macrocosmic_table"], "I Think")
 
     def test_composition_and_html_escaping(self):
         first, _, _, _ = build_seed("000000", "Hello", [])

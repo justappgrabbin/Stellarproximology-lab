@@ -58,6 +58,17 @@ The four LLM dimensions are Movement, Evolution, Being, Design. Space is their
 shared swarm environment. Model identities are unassigned; live model adapters
 are the remaining integration step, rather than silently adding extra models.
 
+The five reference screenshots supplied in this conversation define conceptual
+perspectives, not a single agreed ordering. `seed.DIMENSIONS`, `seed.SPACE`, and
+`seed.SOURCE_ORDERS` preserve their chains, human views, components, and differing
+keynotes. In particular Movement has both 'I Create' and 'I Define'; Space has
+both 'I Communicate' and 'I Think'. The last reference describes Space as the
+condition resulting from the interaction of the four contributing fields.
+Each adapter receives its own dimension profile and the reference orders.
+Responses keep their dimension identity; disagreement is retained, not averaged.
+The particle renderer implements software rules and does not simulate the
+reference's cosmological formulas.
+
 TCS is also unresolved; it is not implemented as TypeScript or assumed to be an
 ISO standard. Binary/ASCII/Unicode/NATO spelling are representations, not model
 dimensions. No I Ching sequence or linguistic grammar is silently substituted.
