@@ -18,6 +18,7 @@ export class ModelCarrier {
     this.pool = new SurvivalPool(dimension);
     this.relationships = new Map();
     this.experiences = [];
+    this.peerObservations = [];
     this.actionCount = 0;
     this.lastEvolutionExperienceCount = 0;
     for (const port of modelPorts) this.registerCandidate(port);
@@ -35,6 +36,7 @@ export class ModelCarrier {
     this.actionCount = Number(saved.actionCount) || 0;
     this.lastEvolutionExperienceCount = Number(saved.lastEvolutionExperienceCount) || 0;
     this.experiences = Array.isArray(saved.experiences) ? [...saved.experiences] : [];
+    this.peerObservations = Array.isArray(saved.peerObservations) ? [...saved.peerObservations] : [];
     this.relationships = new Map(Object.entries(saved.relationships || {}));
     for (const candidate of saved.candidates || []) this.pool.restore(candidate.id, candidate);
     return this;
@@ -49,6 +51,7 @@ export class ModelCarrier {
       contacts: x.contacts,
       structures: x.structures,
     }));
+    const peer = this.peerObservations.slice(-4);
     const prompt = [
       `Carrier identity: ${this.id}`,
       `Dimensional perspective: ${this.dimension}`,
@@ -57,6 +60,7 @@ export class ModelCarrier {
       `Current embodied field: ${JSON.stringify(fieldSummary)}`,
       `Current relationships: ${JSON.stringify(relationships)}`,
       `Recent embodied experience: ${JSON.stringify(recent)}`,
+      `Verified peer-mesh observations: ${JSON.stringify(peer)}`,
       `Current stimulus: ${String(stimulus)}`,
       'Produce the next concise action/condition as ordinary text.',
     ].filter(Boolean).join('\n');
@@ -66,7 +70,7 @@ export class ModelCarrier {
       parentWitness,
     }), this.dimension);
     this.actionCount += 1;
-    const action = Object.freeze({
+    return Object.freeze({
       schema: 'stellar.cognitive.action.v1',
       id: `action:${this.id}:${step}:${sha256({
         carrier: this.id,
@@ -81,7 +85,6 @@ export class ModelCarrier {
       modelFingerprint: emission.modelFingerprint,
       text: emission.text,
     });
-    return action;
   }
 
   learn(feedback, action) {
@@ -116,6 +119,19 @@ export class ModelCarrier {
     return { experience, reward };
   }
 
+  ingestPeerObservation(observation) {
+    const body = Object.freeze({
+      peerNodeId: observation.peerNodeId,
+      peerWitness: observation.peerWitness,
+      fieldWitness: observation.fieldWitness || null,
+      formId: observation.formId || null,
+      relationships: observation.relationships || {},
+      step: observation.step || null,
+    });
+    this.peerObservations.push(body);
+    return body;
+  }
+
   experiencesSinceEvolution() {
     return this.experiences.slice(this.lastEvolutionExperienceCount);
   }
@@ -125,7 +141,9 @@ export class ModelCarrier {
   }
 
   trainingText() {
-    return this.experiencesSinceEvolution().map((x) => JSON.stringify(x)).join('\n');
+    const local = this.experiencesSinceEvolution().map((x) => `LOCAL_RELATIONSHIP ${JSON.stringify(x)}`);
+    const peer = this.peerObservations.slice(-Math.max(8, local.length)).map((x) => `VERIFIED_PEER_OBSERVATION ${JSON.stringify(x)}`);
+    return [...local, ...peer].join('\n');
   }
 
   exportState() {
@@ -137,6 +155,7 @@ export class ModelCarrier {
       lastEvolutionExperienceCount: this.lastEvolutionExperienceCount,
       relationships: Object.fromEntries(this.relationships),
       experiences: this.experiences,
+      peerObservations: this.peerObservations,
       candidates: this.pool.exportState(),
     };
   }

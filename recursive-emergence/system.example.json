@@ -1,4 +1,5 @@
 {
+  "nodeId": "my-local-synthia-node",
   "python": "python3",
   "models": {
     "movement": "/absolute/path/to/models/Movement",
@@ -16,7 +17,8 @@
   "field": {
     "ticks": 2,
     "ttlSteps": 6,
-    "maxActivePieces": 4096
+    "maxActivePieces": 4096,
+    "maxContactsPerCycle": 10000
   },
   "maxPiecesPerAction": 96,
   "evolution": {

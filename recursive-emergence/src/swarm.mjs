@@ -7,11 +7,12 @@ function tokenValue(token) {
 }
 
 export class SwarmEmitter {
-  constructor({ intake, trace, mesh, maxPiecesPerAction = 96 } = {}) {
+  constructor({ intake, trace, mesh, lexicon = null, maxPiecesPerAction = 96 } = {}) {
     if (!intake || !trace || !mesh) throw new TypeError('SwarmEmitter requires intake, trace, and mesh');
     this.intake = intake;
     this.trace = trace;
     this.mesh = mesh;
+    this.lexicon = lexicon;
     this.maxPiecesPerAction = Math.max(1, Number(maxPiecesPerAction) || 96);
   }
 
@@ -22,6 +23,7 @@ export class SwarmEmitter {
       modelFingerprint: action.modelFingerprint,
       carrierGate: action.carrierGate,
     });
+    this.lexicon?.observe(action.id, action.text);
 
     const atoms = [
       ...(addressed.P?.tokens || []).map((value, index) => ({ kind: 'token', index, value: tokenValue(value) })),
@@ -51,6 +53,7 @@ export class SwarmEmitter {
         value: atom.value,
         address: Object.freeze({ ...addressed.address }),
         fractalPath: Object.freeze({
+          originHexagram: action.carrierGate,
           gate: addressed.address.gate,
           line: addressed.address.line,
           color: addressed.address.color,

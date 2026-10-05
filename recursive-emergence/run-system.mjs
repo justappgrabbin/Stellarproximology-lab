@@ -28,6 +28,7 @@ const runtime = new EmbodiedSystemRuntime({
   modelPortsById: modelPorts,
   carrierDefinitions: config.carriers || null,
   stateDir: config.stateDir ? resolve(config.stateDir) : null,
+  nodeId: config.nodeId || null,
   field: config.field || {},
   evolution: {
     ...(config.evolution || {}),

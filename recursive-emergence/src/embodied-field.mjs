@@ -1,5 +1,5 @@
 import { operatorById } from '../vendor/pure-synthia/state-space/operators.js';
-import { channelPartners } from '../vendor/pure-synthia/merged/centers-channels.js';
+import { channelPartners, centerForGate } from '../vendor/pure-synthia/merged/centers-channels.js';
 import { gateBits, hamming } from '../vendor/pure-synthia/state-space/addressing.js';
 import { sha256 } from './hash.mjs';
 
@@ -14,16 +14,6 @@ for (let gate = 1; gate <= 64; gate += 1) {
     if (other !== gate && hamming(bits, gateBits(other)) === 1) neighbors.push(other);
   }
   HAMMING_NEIGHBORS.set(gate, Object.freeze(neighbors));
-}
-
-function relationFor(a, b) {
-  const ga = a.address?.gate;
-  const gb = b.address?.gate;
-  if (!ga || !gb) return null;
-  if (ga === gb) return 'same-gate';
-  if (channelPartners(ga).includes(gb)) return 'canonical-channel';
-  if (HAMMING_NEIGHBORS.get(ga)?.includes(gb)) return 'adjacent-state';
-  return null;
 }
 
 function feedbackRow(carrierId) {
@@ -72,12 +62,23 @@ class DisjointSet {
 }
 
 export class EmbodiedField {
-  constructor({ mesh, trace, ttlSteps = 6, maxActivePieces = 4096 } = {}) {
-    if (!mesh || !trace) throw new TypeError('EmbodiedField requires mesh and trace');
+  constructor({
+    mesh,
+    trace,
+    contactRegistry,
+    channels = null,
+    ttlSteps = 6,
+    maxActivePieces = 4096,
+    maxContactsPerCycle = 10000,
+  } = {}) {
+    if (!mesh || !trace || !contactRegistry) throw new TypeError('EmbodiedField requires mesh, trace, and contactRegistry');
     this.mesh = mesh;
     this.trace = trace;
+    this.contactRegistry = contactRegistry;
+    this.channels = channels;
     this.ttlSteps = Math.max(1, Number(ttlSteps) || 6);
     this.maxActivePieces = Math.max(64, Number(maxActivePieces) || 4096);
+    this.maxContactsPerCycle = Math.max(64, Number(maxContactsPerCycle) || 10000);
     this.active = new Map();
     this.retired = [];
     this.cycleCount = 0;
@@ -138,38 +139,100 @@ export class EmbodiedField {
 
   _contactPairs() {
     const byGate = new Map();
+    const byCenter = new Map();
+    const byValue = new Map();
+
     for (const piece of this.active.values()) {
       const gate = piece.address?.gate;
-      if (!gate) continue;
-      if (!byGate.has(gate)) byGate.set(gate, []);
-      byGate.get(gate).push(piece);
+      if (gate) {
+        if (!byGate.has(gate)) byGate.set(gate, []);
+        byGate.get(gate).push(piece);
+        const center = centerForGate(gate);
+        if (center) {
+          if (!byCenter.has(center)) byCenter.set(center, []);
+          byCenter.get(center).push(piece);
+        }
+      }
+      const value = String(piece.value || '').toLowerCase();
+      if (value) {
+        if (!byValue.has(value)) byValue.set(value, []);
+        byValue.get(value).push(piece);
+      }
     }
-    for (const list of byGate.values()) list.sort((a, b) => a.id.localeCompare(b.id));
 
     const pairs = [];
     const seen = new Set();
-    const gates = [...byGate.keys()].sort((a, b) => a - b);
-    for (const gate of gates) {
-      const targetGates = new Set([
-        gate,
-        ...channelPartners(gate),
-        ...(HAMMING_NEIGHBORS.get(gate) || []),
-      ]);
-      for (const a of byGate.get(gate)) {
-        for (const target of [...targetGates].sort((x, y) => x - y)) {
-          for (const b of byGate.get(target) || []) {
-            if (a.id === b.id) continue;
-            const key = a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`;
-            if (seen.has(key)) continue;
-            const relation = relationFor(a, b);
-            if (!relation) continue;
-            seen.add(key);
-            pairs.push({ a, b, relation });
-          }
+    let saturated = false;
+    const consider = (a, b) => {
+      if (saturated || a.id === b.id) return;
+      const key = a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const relations = this.contactRegistry.relations(a, b, { field: this });
+      if (!relations.length) return;
+      pairs.push({ a, b, relations });
+      if (pairs.length >= this.maxContactsPerCycle) saturated = true;
+    };
+
+    for (const [gate, list] of [...byGate.entries()].sort((a, b) => a[0] - b[0])) {
+      const targets = new Set([gate, ...channelPartners(gate), ...(HAMMING_NEIGHBORS.get(gate) || [])]);
+      for (const a of list) {
+        for (const target of [...targets].sort((x, y) => x - y)) {
+          for (const b of byGate.get(target) || []) consider(a, b);
+          if (saturated) break;
         }
+        if (saturated) break;
+      }
+      if (saturated) break;
+    }
+
+    if (!saturated) {
+      for (const list of byCenter.values()) {
+        for (let i = 0; i < list.length; i += 1) {
+          for (let j = i + 1; j < list.length; j += 1) {
+            consider(list[i], list[j]);
+            if (saturated) break;
+          }
+          if (saturated) break;
+        }
+        if (saturated) break;
       }
     }
-    return pairs;
+
+    if (!saturated) {
+      for (const list of byValue.values()) {
+        for (let i = 0; i < list.length; i += 1) {
+          for (let j = i + 1; j < list.length; j += 1) {
+            consider(list[i], list[j]);
+            if (saturated) break;
+          }
+          if (saturated) break;
+        }
+        if (saturated) break;
+      }
+    }
+
+    const lexicon = this.contactRegistry.lexicon;
+    if (!saturated && lexicon) {
+      for (const [value, left] of byValue) {
+        const inferred = lexicon.infer(value);
+        for (const related of [...inferred.synonyms, ...inferred.related]) {
+          const right = byValue.get(related);
+          if (!right) continue;
+          for (const a of left) {
+            for (const b of right) {
+              consider(a, b);
+              if (saturated) break;
+            }
+            if (saturated) break;
+          }
+          if (saturated) break;
+        }
+        if (saturated) break;
+      }
+    }
+
+    return { pairs, saturated };
   }
 
   cycle({ step, ticks = 1, currentCarrierIds = [] } = {}) {
@@ -183,28 +246,42 @@ export class EmbodiedField {
 
     for (let tick = 1; tick <= Math.max(1, Number(ticks) || 1); tick += 1) {
       this.cycleCount += 1;
-      const pairs = this._contactPairs();
+      const { pairs, saturated } = this._contactPairs();
       const perPieceContacts = new Map();
 
       for (const contact of pairs) {
+        const relation = contact.relations.join('+');
+        const contactId = `contact:s${step}:t${tick}:${sha256([
+          contact.a.id,
+          contact.b.id,
+          contact.relations,
+        ]).slice(0, 16)}`;
+
         perPieceContacts.set(contact.a.id, (perPieceContacts.get(contact.a.id) || 0) + 1);
         perPieceContacts.set(contact.b.id, (perPieceContacts.get(contact.b.id) || 0) + 1);
         this.mesh.addEdge('causal', contact.a.id, contact.b.id, 'embodied_contact', {
-          relation: contact.relation,
+          contactId,
+          relations: contact.relations,
           step,
           tick,
         });
         this.mesh.addEdge('dependency', contact.b.id, contact.a.id, 'contact_depends_on', {
-          relation: contact.relation,
+          contactId,
+          relations: contact.relations,
           step,
           tick,
         });
+
+        if (contact.a.carrierId !== contact.b.carrierId) {
+          this.channels?.recordCrossing(contact.a.carrierId, contact.b.carrierId, { id: contactId });
+          this.channels?.recordCrossing(contact.b.carrierId, contact.a.carrierId, { id: contactId });
+        }
 
         for (const [self, other] of [[contact.a, contact.b], [contact.b, contact.a]]) {
           const row = feedback.get(self.carrierId);
           if (row && self.bornStep === step) {
             row.contacts += 1;
-            addCounterpart(row, other.carrierId, contact.relation);
+            addCounterpart(row, other.carrierId, relation);
           }
         }
       }
@@ -265,6 +342,7 @@ export class EmbodiedField {
       tickReports.push(Object.freeze({
         tick,
         contacts: pairs.length,
+        contactSaturated: saturated,
         structures: structures.length,
         formId: finalForm?.id || null,
       }));
@@ -282,6 +360,7 @@ export class EmbodiedField {
       retiredPieces: this.retired.length,
       formId: finalForm?.id || null,
       gateHistogram: this.gateHistogram(),
+      promotedChannels: this.channels?.promoted().map((x) => x.key || `${x.a}~${x.b}`) || [],
     };
     const fieldWitness = sha256(summaryBody);
     this.lastWitness = fieldWitness;
@@ -324,6 +403,7 @@ export class EmbodiedField {
       lastWitness: this.lastWitness,
       lastFormId: this.lastForm?.id || null,
       gateHistogram: this.gateHistogram(),
+      promotedChannels: this.channels?.promoted() || [],
     });
   }
 

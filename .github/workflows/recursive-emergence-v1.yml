@@ -1,0 +1,28 @@
+name: recursive-emergence-v1
+
+on:
+  push:
+    branches: [recursive-emergence-v1]
+    paths:
+      - "recursive-emergence/**"
+      - ".github/workflows/recursive-emergence-v1.yml"
+  pull_request:
+    paths:
+      - "recursive-emergence/**"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: JavaScript contracts
+        working-directory: recursive-emergence
+        run: node --test tests/*.test.mjs
+      - name: Python syntax
+        run: python -m py_compile recursive-emergence/python/*.py

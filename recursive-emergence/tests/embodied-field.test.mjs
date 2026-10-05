@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { AutomataMesh } from '../vendor/pure-synthia/mesh/mesh.js';
 import { GraphTraceBuilder } from '../vendor/pure-synthia/experiments/scale/graph-trace.js';
+import { ContactRegistry } from '../src/contact-registry.mjs';
 import { EmbodiedField } from '../src/embodied-field.mjs';
 
 function piece(id, carrierId, gate) {
@@ -22,7 +23,8 @@ function piece(id, carrierId, gate) {
 test('embodied field turns structural contact into shared form and bilateral feedback', () => {
   const mesh = new AutomataMesh();
   const trace = new GraphTraceBuilder(mesh);
-  const field = new EmbodiedField({ mesh, trace, ttlSteps: 8 });
+  const contactRegistry = new ContactRegistry();
+  const field = new EmbodiedField({ mesh, trace, contactRegistry, ttlSteps: 8 });
   field.ingest([
     { actionId: 'action:Movement', pieces: [piece('p1', 'Movement', 1)] },
     { actionId: 'action:Being', pieces: [piece('p2', 'Being', 1)] },
@@ -38,12 +40,17 @@ test('embodied field turns structural contact into shared form and bilateral fee
 test('field state can be exported and hydrated without losing active pieces', () => {
   const mesh = new AutomataMesh();
   const trace = new GraphTraceBuilder(mesh);
-  const field = new EmbodiedField({ mesh, trace });
+  const contactRegistry = new ContactRegistry();
+  const field = new EmbodiedField({ mesh, trace, contactRegistry });
   field.ingest([{ actionId: 'a', pieces: [piece('p1', 'Movement', 1)] }], 1);
   const state = field.exportState();
 
   const mesh2 = new AutomataMesh();
   const trace2 = new GraphTraceBuilder(mesh2);
-  const restored = new EmbodiedField({ mesh: mesh2, trace: trace2 }).hydrate(state);
+  const restored = new EmbodiedField({
+    mesh: mesh2,
+    trace: trace2,
+    contactRegistry: new ContactRegistry(),
+  }).hydrate(state);
   assert.equal(restored.summary().activePieces, 1);
 });

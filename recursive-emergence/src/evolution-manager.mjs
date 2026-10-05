@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { LocalPythonModelPort } from './model-port.mjs';
+import { sha256 } from './hash.mjs';
 
 const DEFAULT_SCRIPT = fileURLToPath(new URL('../python/evolve_model.py', import.meta.url));
 
@@ -38,12 +39,33 @@ export class EvolutionManager {
       return { status: 'blocked', reason: 'PARENT_MODEL_DIR_MISSING' };
     }
 
+    const trainingText = carrier.trainingText();
     const evolutionIndex = Math.floor(carrier.experiences.length / this.threshold);
-    const root = join(this.stateDir, 'evolution', safeName(carrier.id), String(evolutionIndex).padStart(6, '0'));
+    const digest = sha256(trainingText).slice(0, 12);
+    const root = join(
+      this.stateDir,
+      'evolution',
+      safeName(carrier.id),
+      `${String(evolutionIndex).padStart(6, '0')}-${digest}`,
+    );
     mkdirSync(root, { recursive: true });
     const experienceFile = join(root, 'relationship-experience.jsonl');
-    writeFileSync(experienceFile, carrier.trainingText() + '\n', { flag: 'wx' });
+    if (!existsSync(experienceFile)) writeFileSync(experienceFile, trainingText + '\n', { flag: 'wx' });
     const outputDir = join(root, 'model');
+
+    if (existsSync(join(outputDir, 'dimension_manifest.json'))) {
+      const recovered = new LocalPythonModelPort({ modelDir: outputDir, python: this.python });
+      carrier.registerCandidate(recovered);
+      carrier.markEvolved();
+      return {
+        status: 'candidate-recovered',
+        carrierId: carrier.id,
+        modelId: recovered.id,
+        modelFingerprint: recovered.manifest.modelFingerprint,
+        parentModelFingerprint: recovered.manifest.parentModelFingerprint,
+        modelDir: recovered.modelDir,
+      };
+    }
 
     const args = [
       this.script,
