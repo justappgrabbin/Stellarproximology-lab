@@ -74,8 +74,8 @@ function rebuild() {
   });
   const pixels = ink.getImageData(0, 0, width, height).data;
   const next = [];
-  for (let y = 0; y < height; y += 4) {
-    for (let x = 0; x < width; x += 4) {
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
       if (pixels[(y * width + x) * 4 + 3] > 80) {
         const old = particles[next.length];
         next.push({x: old ? old.x : Math.random() * width,
