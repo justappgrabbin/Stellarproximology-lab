@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import shutil
 import subprocess
 import sys
 import threading
@@ -59,6 +60,7 @@ class Workspace:
         self.lock = threading.RLock(); self.processes = {}; self.stop_event = threading.Event()
         path = self.directory / 'workspace.json'
         self.state = json.loads(path.read_text()) if path.exists() else {'models': [], 'jobs': [], 'plans': [], 'releases': [], 'selected': None}
+        self.state.setdefault('analyses', [])
         # Recover interrupted runs honestly. No unbounded hidden restart.
         for job in self.state['jobs']:
             if job['status'] in {'queued','running'}: job.update(status='interrupted', error='Service restarted. Start a fresh run.')
@@ -205,13 +207,27 @@ class Workspace:
         return data.getvalue()
 
     def stage_release(self, payload):
-        identifier=payload.get('model'); self.get('models',identifier)
+        identifier=payload.get('analysis') or payload.get('model')
+        analysis=self.get('analyses',identifier) if payload.get('analysis') else None
+        if analysis and analysis['route']!='papers': raise ValueError('Route the analysis to papers before preparing a paper release.')
+        if not analysis: self.get('models',identifier)
         target=payload.get('target','download'); repo=payload.get('repo','')
         if target not in {'download','huggingface','github','github-pages'}: raise ValueError('Choose download, GitHub, or Hugging Face.')
         if target in {'github','github-pages','huggingface'} and not re.fullmatch(r'[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+',repo): raise ValueError('Enter a Hugging Face owner/model repository.')
-        data=self.bundle(identifier); release_id=new_id(); folder=self.path(release_id); folder.mkdir()
+        if analysis:
+            report=(self.path(identifier)/'paper-draft.md').read_text()
+            output=io.BytesIO()
+            with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr('README.md',report)
+                archive.writestr('paper-draft.md',report)
+                archive.writestr('evaluation.json',json.dumps(analysis['report'],indent=2))
+                archive.writestr('index.html','<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Stellar Proximology Research Draft</title><main style="max-width:800px;margin:4em auto;font:18px system-ui;padding:20px"><pre style="white-space:pre-wrap">'+html.escape(report)+'</pre></main>')
+            data=output.getvalue()
+        else: data=self.bundle(identifier)
+        release_id=new_id(); folder=self.path(release_id); folder.mkdir()
         (folder/'release.zip').write_bytes(data)
         record={'id':release_id,'model':identifier,'target':target,'repo':repo,'private':target not in {'github','github-pages'},
+                'name':analysis['name'] if analysis else self.get('models',identifier)['name'],'kind':'paper' if analysis else 'model',
                 'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data),'status':'prepared','created':now()}
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             record['included_files']=archive.namelist()
@@ -272,6 +288,45 @@ class Workspace:
                     release.update(status='failed',error='Inspect the newly created repository before preparing another release.'); self.save()
                 raise
 
+    def analyze(self, payload):
+        approved(payload)
+        name=payload.get('name',''); text=payload.get('text','')
+        if not isinstance(name,str) or not name.strip() or len(name)>120: raise ValueError('Enter a source name of 1–120 characters.')
+        if not isinstance(text,str) or not 1<=len(text.encode())<=200000: raise ValueError('Source must contain 1–200,000 UTF-8 bytes.')
+        if payload.get('route','auto') not in {'auto','build','experiments','papers','library'}: raise ValueError('Invalid route.')
+        node=shutil.which('node')
+        if not node: raise ValueError('Install Node.js 22+ to run the pure JavaScript automata pipeline.')
+        with self.lock:
+            identifier=new_id(); folder=self.path(identifier); folder.mkdir()
+            previous=next((r for r in reversed(self.state['analyses']) if r['name']==name),None)
+            previous_report=json.loads((self.path(previous['id'])/'report.json').read_text()) if previous else None
+            request={'name':name,'text':text,'route':payload.get('route','auto'),'previous':previous_report}
+            write_json(folder/'analysis-input.json',request)
+            process=subprocess.run([node,str(Path(__file__).with_name('analyze.mjs')),str(folder/'analysis-input.json'),str(folder/'report.json'),str(folder/'primitive.json'),str(folder/'restored-source.txt')],capture_output=True,text=True,timeout=30)
+            if process.returncode: raise ValueError('Analysis failed: '+process.stderr[-2000:])
+            report=json.loads((folder/'report.json').read_text())
+            if report['sourceHash']!=hashlib.sha256(text.encode()).hexdigest() or (folder/'restored-source.txt').read_bytes()!=text.encode(): raise ValueError('Independent reconstruction verification failed.')
+            if report['format']=='javascript':
+                checkfile=folder/'syntax-source.mjs'; checkfile.write_text(text)
+                check=subprocess.run([node,'--check',str(checkfile)],capture_output=True,text=True,timeout=10)
+                report['syntax']={'passed':check.returncode==0,'diagnostic':check.stderr[-2000:]}
+                if check.returncode:
+                    report['findings'].append({'kind':'syntax-error','message':'Repair JavaScript syntax before executing or building.','eventId':report['eventId'],'sourceHash':report['sourceHash'],'evidence':report['syntax']['diagnostic']})
+                    report['followUps'].append({'status':'awaiting-review','action':'Repair JavaScript syntax','evidence':report['syntax']['diagnostic']})
+            report.pop('reportHash',None)
+            report['reportHash']=hashlib.sha256(json.dumps(report,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            write_json(folder/'report.json',report)
+            task={'schema':'synthia.route.v1','analysisId':identifier,'eventId':report['eventId'],'sourceHash':report['sourceHash'],'reportHash':report['reportHash'],'destination':report['route'],'status':'awaiting-review','followUps':report['followUps']}
+            route_folder=self.directory/'routes'/report['route']; route_folder.mkdir(parents=True,exist_ok=True)
+            task['address']='routes/'+report['route']+'/'+identifier+'.json'
+            write_json(folder/'route-task.json',task)
+            write_json(route_folder/(identifier+'.json'),task)
+            if report['route']=='papers':
+                draft='# Research draft: '+name+'\n\nStatus: computational report awaiting author review.\n\n## Method\nLossless dictionary-index reduction, exact SHA-256 reconstruction verification, and five execution partitions (Movement, Evolution, Being, Design, Space).\n\n## Recorded results\n```json\n'+json.dumps({'sourceHash':report['sourceHash'],'statistics':report['statistics'],'findings':report['findings']},indent=2)+'\n```\n\n## Limitations\nThis draft does not establish scientific validity for Human Design or field correspondences. Add literature citations, comparison experiments, interpretation, and author approval before publishing.\n'
+                (folder/'paper-draft.md').write_text(draft)
+            record={'id':identifier,'name':name,'created':now(),'route':report['route'],'sourceHash':report['sourceHash'],'reportHash':report['reportHash'],'status':'recorded','report':report,'task':task}
+            self.state['analyses'].append(record); self.save(); return record
+
     def close(self):
         self.stop_event.set()
         for job in list(self.state['jobs']):
@@ -297,6 +352,7 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             self.secure(); self.server.workspace.refresh(); path=urlsplit(self.path).path; w=self.server.workspace
             if path=='/api/local/status': return self.send_json(200,{'local':True,'token':TOKEN,'torch':importlib.util.find_spec('torch') is not None,'active_model':w.state['selected']})
+            if path=='/api/local/analyses': return self.send_json(200,{'analyses':w.state['analyses'],'node':shutil.which('node') is not None})
             if path=='/api/local/models': return self.send_json(200,w.list_models())
             if path=='/api/local/lab': return self.send_json(200,{'jobs':w.state['jobs'],'plans':w.state['plans'],'releases':w.state['releases']})
             match=re.fullmatch(r'/api/local/releases/([0-9a-f]{32})/download',path)
@@ -318,6 +374,7 @@ class Handler(SimpleHTTPRequestHandler):
             if not 0<length<=300000: raise ValueError('Request size is outside the supported range.')
             payload=json.loads(self.rfile.read(length)); path=urlsplit(self.path).path; w=self.server.workspace
             if path=='/api/local/train': result=w.start(payload)
+            elif path=='/api/local/analyze': result=w.analyze(payload)
             elif path=='/api/local/plans': result=w.plan(payload)
             elif path=='/api/local/releases': result=w.stage_release(payload)
             else:

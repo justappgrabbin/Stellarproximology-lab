@@ -74,5 +74,27 @@ class LocalLearningTests(unittest.TestCase):
             catalog=w.list_models();self.assertEqual(len(catalog['catalog']),7);self.assertEqual(catalog['local'],[])
             self.assertTrue(all('not installed' in m['availability'] for m in catalog['catalog']))
 
+    def test_swarm_pipeline_route_and_reviewed_paper(self):
+        with tempfile.TemporaryDirectory() as d:
+            w=Workspace(d)
+            with self.assertRaises(PermissionError): w.analyze({'name':'x.json','text':'{"x":1}'})
+            source='{"measurements":[1,2,3,4,5,6]}'
+            record=w.analyze({'name':'x.json','text':source,'route':'papers','approved':True})
+            self.assertEqual(record['report']['statistics']['sum'],21)
+            self.assertEqual((w.path(record['id'])/'restored-source.txt').read_text(),source)
+            self.assertTrue((Path(d)/record['task']['address']).exists())
+            release=w.stage_release({'analysis':record['id'],'target':'download'})
+            self.assertEqual(release['kind'],'paper')
+            self.assertIn('paper-draft.md',release['included_files'])
+            self.assertNotIn('restored-source.txt',release['included_files'])
+            with self.assertRaises(ValueError): w.publish(release['id'],{'approved':True,'sha256':'changed'})
+            w.publish(release['id'],{'approved':True,'sha256':release['sha256']})
+            changed=w.analyze({'name':'x.json','text':'{"measurements":[2]}','approved':True})
+            self.assertTrue(changed['report']['versionComparison']['changed'])
+            code=w.analyze({'name':'broken.mjs','text':'const = ;','approved':True})
+            self.assertFalse(code['report']['syntax']['passed'])
+            self.assertEqual(code['route'],'build')
+            self.assertTrue(any(f['kind']=='syntax-error' for f in code['report']['findings']))
+
 
 if __name__=='__main__':unittest.main()

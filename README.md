@@ -77,3 +77,35 @@ A requested workflow is not a successful deployment; inspect its Actions result.
 The supplied private Drive corpus is intentionally excluded from this public
 repository. To use a separately downloaded corpus locally, launch with
 `python local-learning/service.py --corpus /path/to/corpus.json`.
+
+## Pure JavaScript swarm / automata analysis
+
+Install Node.js 22+ on your computer, then open **Swarm / automata** in the local
+app. Load UTF-8 text, JSON, or JavaScript (up to 200 KB). Each approved run:
+
+1. Reduces bytes to a dictionary and minimum fixed-width dictionary indexes.
+2. Reconstructs the exact full-size source and verifies its SHA-256 independently.
+3. Splits work into five execution partitions named Movement, Evolution, Being,
+   Design, and Space. These are partition labels, not semantic roles. Five
+   contiguous byte ranges cover the entire source; JSON scalar workloads are
+   separately split into five contiguous ordinal ranges.
+4. Executes the supplied Automaton/AutomataMesh runtime with bounded, fixed
+   mathematical analysis tools. Combines partition findings and checks coverage.
+5. Records the source identity, tool addresses, partition ranges, findings,
+   version changes, evidence, follow-up tasks, and routing address locally.
+6. Routes a review task to `local-learning/data/routes/build`, `experiments`,
+   `papers`, or `library`. Automatic routing uses JavaScript → build, numeric
+   JSON → experiments, other text → library. Explicit destinations override it.
+
+This representation is lossless but is not guaranteed to be smaller than the
+original. It does not infer semantics from bytes. JSON math operates on parsed
+numeric scalars; adjacent scalar transitions follow traversal order, not an
+assumed timeline. Arbitrary uploaded JavaScript is **not evaluated**: the service
+performs Node syntax checks and produces build-review tasks. This first integration
+uses fixed analysis executors; autonomous code repair/tool creation is not enabled.
+
+The papers route creates a local research draft from recorded results with
+explicit limitations. **Prepare paper for publishing review** stages that draft,
+evidence record and static project page in Publishing Studio. Inspect the bundle,
+edit/review the research locally, and approve before GitHub publication. These are
+computational drafts, not claims of peer review or established scientific findings.
