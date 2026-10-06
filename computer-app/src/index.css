@@ -168,23 +168,14 @@
   }
 }
 
-/* App hub on phones; movable desktop windows on larger screens. */
-.computer-mobile-home,.computer-mobile-home-button{display:none}
+
+/* Keep the supplied Web Linux desktop; adapt only fit and touch targets. */
 .computer-resize-handles>div{pointer-events:auto}
 @media(max-width:700px){
- .computer-wide-desktop,.computer-wide-dock{display:none}
- .computer-mobile-home{display:block;position:absolute;inset:28px 0 0;padding:22px 18px 95px;overflow:auto;color:white;background:linear-gradient(#09132155,#09132122)}
- .computer-mobile-home h1{font-size:1.8rem;font-weight:700;margin:0 0 4px}.computer-mobile-home p{font-size:.85rem;margin-bottom:18px;color:#e1e7ef}
- .computer-mobile-home input{width:100%;border-radius:13px;border:1px solid #ffffff30;background:#102132c9;color:white;padding:12px 15px;font-size:16px;margin-bottom:25px}
- .computer-mobile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:19px 8px}.computer-mobile-grid button{display:flex;flex-direction:column;align-items:center;gap:8px;min-height:95px;font-size:.7rem;text-align:center;color:white}
- .computer-mobile-grid button span{display:grid;place-items:center;background:#192c3ee0;color:var(--accent-primary);border:1px solid #ffffff26;border-radius:17px;width:60px;height:60px;box-shadow:0 7px 22px #0003}.computer-mobile-grid b{font-weight:500;line-height:1.4}
- .computer-mobile-homebar{display:flex;gap:12px;justify-content:center;margin-top:28px;font-size:.75rem}.computer-mobile-homebar button{border:1px solid #ffffff45;border-radius:8px;padding:10px;background:#102132cc}
- .computer-window{left:0!important;top:28px!important;width:100%!important;height:calc(100dvh - 88px)!important;border-radius:0!important;max-width:100%;min-width:0}
+ .computer-window{left:0!important;top:28px!important;width:100%!important;height:calc(100dvh - 85px)!important;border-radius:0!important;max-width:100%;min-width:0}
  .computer-window .computer-resize-handles{display:none}
  .computer-window button{min-width:40px;min-height:40px}
- .computer-mobile-home-button{display:block;position:fixed;bottom:10px;left:50%;transform:translateX(-50%);z-index:9000;background:#152533eb;color:white;border:1px solid #ffffff44;border-radius:22px;padding:10px 28px;min-height:44px;backdrop-filter:blur(15px)}
+ .computer-settings{flex-direction:column}.computer-settings>div:first-child{width:100%;max-height:145px;border-right:0;border-bottom:1px solid var(--border-subtle)}.computer-settings>div:nth-child(2){min-height:0;padding:18px}.computer-settings h2{font-size:1.3rem}
+ .computer-top-panel>div:last-child>button{display:none}.computer-top-panel>button{position:relative!important;left:auto!important;transform:none!important}.computer-top-panel>div:last-child{min-width:30px}
+ .computer-app-launcher .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 }
-
-@media(max-width:700px){.computer-settings{flex-direction:column}.computer-settings>div:first-child{width:100%;max-height:145px;border-right:0;border-bottom:1px solid var(--border-subtle)}.computer-settings>div:nth-child(2){min-height:0;padding:18px}.computer-settings h2{font-size:1.3rem}}
-
-@media(max-width:700px){.computer-top-panel>div:last-child>button{display:none}.computer-top-panel>button{position:relative!important;left:auto!important;transform:none!important}.computer-top-panel>div:last-child{min-width:30px}}

@@ -7,7 +7,6 @@ import { OSProvider, useOS } from '@/hooks/useOSStore';
 import BootSequence from '@/components/BootSequence';
 import LoginScreen from '@/components/LoginScreen';
 import Desktop from '@/components/Desktop';
-import MobileHome from '@/components/MobileHome';
 import TopPanel from '@/components/TopPanel';
 import Dock from '@/components/Dock';
 import AppLauncher from '@/components/AppLauncher';
@@ -130,8 +129,7 @@ function AppShell() {
           />
 
           {/* Desktop Icons layer */}
-          <div className="computer-wide-desktop"><Desktop /></div>
-          <MobileHome />
+          <Desktop />
 
           {/* Windows layer */}
           <WindowManager />
@@ -140,8 +138,7 @@ function AppShell() {
           <TopPanel />
 
           {/* Dock */}
-          <div className="computer-wide-dock"><Dock /></div>
-          <button className="computer-mobile-home-button" onClick={()=>dispatch({type:'MINIMIZE_ALL'})}>⌂ Home</button>
+          <Dock />
 
           {/* Overlays */}
           <AppLauncher />

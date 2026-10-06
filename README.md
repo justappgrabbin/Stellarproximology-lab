@@ -115,9 +115,9 @@ computational drafts, not claims of peer review or established scientific findin
 The supplied **Web Linux** archive is integrated as a separate **computer app hub**
 at `/computer/`. It keeps its existing application catalog and now includes
 Synthia Human Design, Auto Lab, Swarm, and Publishing Studio. Human Design keeps
-its phone interface inside the hub. On phones, the hub has a searchable touch
-launcher, full-width app windows and a Home button; larger screens retain desktop
-icons, draggable/resizable windows and the dock.
+its phone interface inside the hub. Phones and larger screens both retain the supplied Web Linux desktop,
+original Activities launcher, icons and dock. Phones support single-tap icon
+launching and fitted app windows; larger screens retain draggable windows.
 
 Computer hub **Settings → Background** changes its background, including your
 own image. **Appearance** changes theme and accent. Background, appearance,

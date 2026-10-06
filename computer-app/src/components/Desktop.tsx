@@ -114,6 +114,12 @@ const Desktop = memo(function Desktop() {
       {desktopIcons.map((icon) => (
         <div
           key={icon.id}
+          data-desktop-app={icon.appId}
+          role="button"
+          tabIndex={0}
+          aria-label={'Open '+icon.name}
+          onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();handleIconDoubleClick(icon);}}}
+          onClick={()=>{if(window.innerWidth<=700)handleIconDoubleClick(icon);}}
           className="absolute flex flex-col items-center gap-1 cursor-pointer group"
           style={{
             left: icon.position.x,

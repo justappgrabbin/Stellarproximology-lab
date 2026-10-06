@@ -73,7 +73,7 @@ const AppLauncher = memo(function AppLauncher() {
 
   return (
     <div
-      className="fixed inset-0 z-[3000] flex flex-col items-center"
+      className="computer-app-launcher fixed inset-0 z-[3000] flex flex-col items-center"
       style={{
         background: 'var(--bg-app-grid)',
         backdropFilter: 'blur(24px)',
