@@ -18,6 +18,10 @@ function toast(t){document.querySelector('.toast')?.remove();const el=document.c
 const icons={overview:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',assistant:'<path d="M21 11a8 8 0 0 1-8 8H4l-2 3V11a9 9 0 1 1 19 0Z"/><path d="M7 10h8m-8 4h5"/>',explore:'<circle cx="12" cy="12" r="9"/><path d="m16 8-2 6-6 2 2-6Z"/>',gates:'<path d="M4 3h13v18H4zM7 7h7M7 11h7M7 15h4M17 5h3v16h-3"/>',notes:'<path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h4"/>',sources:'<path d="M3 7h7l2 2h9v12H3zM3 7V3h7l2 2h9v4"/>',plus:'<path d="M12 5v14M5 12h14"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/>'};
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[n]||icons.explore}</svg>`;
 const NAV=[['overview','My workspace'],['assistant','Synthia assistant'],['explore','Chart explorer'],['gates','64 gate library'],['notes','Reflection lab'],['training','Local training'],['shop','Model Go Round Shoppe'],['autolab','Auto Lab'],['swarm','Swarm / automata'],['studio','Publishing Studio'],['evolution','Build & evolve'],['sources','Sources & models']];
+const panel=new URLSearchParams(location.search).get('panel');
+const embedded=NAV.some(([id])=>id===panel);
+if(embedded){view=panel;document.body.classList.add('embedded-app');}
+window.addEventListener('storage',event=>{if(event.key===KEY&&event.newValue){try{db={...defaults,...JSON.parse(event.newValue)};if(!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))render();}catch{}}});
 const prompts=['How can I make decisions with more clarity?','Explain my defined and open centers','What do my active gates mean?'];
 const sourceId='1FtkpJLnar6PTYa4k0BABIbIffDNE02aB';
 const sourceUrl=id=>corpus.sources.find(s=>s.id===id)?.url||`https://drive.google.com/file/d/${id}/view`;

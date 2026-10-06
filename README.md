@@ -109,3 +109,30 @@ explicit limitations. **Prepare paper for publishing review** stages that draft,
 evidence record and static project page in Publishing Studio. Inspect the bundle,
 edit/review the research locally, and approve before GitHub publication. These are
 computational drafts, not claims of peer review or established scientific findings.
+
+## Your computer app hub, on phones and computers
+
+The supplied **Web Linux** archive is integrated as a separate **computer app hub**
+at `/computer/`. It keeps its existing application catalog and now includes
+Synthia Human Design, Auto Lab, Swarm, and Publishing Studio. Human Design keeps
+its phone interface inside the hub. On phones, the hub has a searchable touch
+launcher, full-width app windows and a Home button; larger screens retain desktop
+icons, draggable/resizable windows and the dock.
+
+Computer hub **Settings → Background** changes its background, including your
+own image. **Appearance** changes theme and accent. Background, appearance,
+desktop icon placement, and pinned dock apps save locally. This is the app hub's
+appearance; it does not change your phone or computer operating-system wallpaper.
+
+The downloadable local package includes the built hub when CI completes. Run
+`local-learning/start-computer.bat` (Windows) or
+`sh local-learning/start-computer.command` (macOS/Linux). Keep the launcher open.
+Use `start-local` for the standalone Human Design interface. To open either in
+a standalone window, optionally install `pywebview`; otherwise the launcher opens
+your browser. Linux standalone windows also need the platform's WebKit/GTK or Qt
+runtime. For source checkout builds, use Node.js 22+, run `npm ci --ignore-scripts`
+and `npm run build` inside `computer-app`, then launch.
+
+The loopback setup opens on the same machine. Opening the app on a separate phone
+requires hosted deployment or a configured private phone connection; it has not
+been deployed to your phone by this change.

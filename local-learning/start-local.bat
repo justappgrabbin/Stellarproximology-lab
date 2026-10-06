@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0.."
-py local-learning\service.py
+py local-learning\launch.py
 pause

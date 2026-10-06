@@ -1,3 +1,3 @@
 #!/bin/sh
 cd "$(dirname "$0")/.." || exit 1
-python3 local-learning/service.py
+python3 local-learning/launch.py

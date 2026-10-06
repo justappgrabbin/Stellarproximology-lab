@@ -364,6 +364,14 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data); return
             if path=='/corpus.json' and self.server.corpus_path:
                 data=self.server.corpus_path.read_bytes(); self.send_response(200); self.send_header('Content-Type','application/json'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data); return
+            if path.startswith('/computer/') or path=='/computer':
+                relative=path.removeprefix('/computer').lstrip('/') or 'index.html'
+                root=(ROOT/'computer-app/dist').resolve(); file=(root/relative).resolve()
+                if not file.is_relative_to(root): raise PermissionError('Invalid computer asset path.')
+                if file.is_dir(): file=file/'index.html'
+                if not file.is_file(): return self.send_json(404,{'error':'Build the computer app first: npm ci and npm run build in computer-app.'})
+                import mimetypes
+                data=file.read_bytes(); self.send_response(200); self.send_header('Content-Type',mimetypes.guess_type(file.name)[0] or 'application/octet-stream'); self.send_header('Content-Length',str(len(data))); self.end_headers(); self.wfile.write(data); return
             if path.startswith('/api/'): return self.send_json(404,{'error':'Endpoint not found.'})
             return super().do_GET()
         except PermissionError as error: self.send_json(403,{'error':str(error)})

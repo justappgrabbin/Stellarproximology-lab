@@ -8,3 +8,5 @@ push-result.json
 human-design/dist/corpus.json
 local-learning/data/
 *.pt
+computer-app/node_modules/
+computer-app/dist/

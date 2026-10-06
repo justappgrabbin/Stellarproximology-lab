@@ -32,3 +32,32 @@ jobs:
           python-version: '3.12'
       - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
       - run: python tests/smoke_trident.py
+  computer-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts
+        working-directory: computer-app
+      - run: npm run build
+        working-directory: computer-app
+      - run: npm install --no-save --package-lock=false --ignore-scripts playwright
+        working-directory: computer-app
+      - run: npx playwright install --with-deps chromium
+        working-directory: computer-app
+      - run: node tests/ui-smoke.mjs
+        working-directory: computer-app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: computer-layout-preview
+          path: computer-app/screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synthia-computer
+          path: computer-app/dist
+          if-no-files-found: error
