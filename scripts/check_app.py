@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-for folder in ['Modelmaker-repair', 'scripts', 'tests']:
+for folder in ['Modelmaker-repair', 'local-learning', 'scripts', 'tests']:
     for file in (ROOT / folder).rglob('*.py'):
         ast.parse(file.read_text(), filename=str(file))
 for file in (ROOT / 'human-design/dist').glob('*.mjs'):

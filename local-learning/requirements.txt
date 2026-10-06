@@ -1,0 +1,4 @@
+# Optional CPU neural training; the baseline trainer needs only Python.
+torch>=2.2,<3
+# Optional approved publishing to private Hugging Face repositories.
+huggingface_hub>=0.28,<2

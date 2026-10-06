@@ -6,3 +6,5 @@ __pycache__/
 candidate/
 push-result.json
 human-design/dist/corpus.json
+local-learning/data/
+*.pt

@@ -37,3 +37,43 @@ Run `python scripts/check_app.py`. This verifies Python and JavaScript syntax, t
 ## Boundaries
 
 Automated candidates are limited to app files. They cannot change workflows, approval policy, hidden files, dependency lists, or the private corpus. No deletions, direct main pushes, automatic merging, automatic deployment, or publication of advertisements are performed by the evolution automation. Broader changes can be proposed in a separately reviewed PR.
+
+## On your computer: Auto Lab and Publishing Studio
+
+Download this branch/approved repository ZIP and extract it. Install Python 3.10+.
+Run `python local-learning/service.py` from the extracted project, then open
+http://127.0.0.1:8765. Windows also has `local-learning/start-local.bat`; macOS/Linux
+has `local-learning/start-local.command` (run with `sh` if the download loses permissions).
+The default byte-ngram trainer needs no extra packages. For SynthAI2's experimental
+TRIDENT neural trainer, install `local-learning/requirements.txt` first. No Hugging
+Face reference model is silently downloaded or claimed to be installed.
+
+Local training saves checkpoints, metrics, plans, and releases in
+`local-learning/data/` on your computer. Each approved Auto Lab plan has 1–5 runs,
+a bounded interval, one worker at a time, and a pause control. Plans pause when the
+service restarts; the service must remain open for scheduled experiments.
+Model Go Round Shoppe lets you select and test saved checkpoints and inspect
+SynthAI2's seven-model reference catalog. Small byte models are experimental;
+the chart assistant still uses its existing source-based rules and retrieval.
+
+Publishing Studio stages the exact ZIP, shows its model card, included files,
+metrics, destination, and SHA-256, then requires personal approval. Downloads
+stay local. GitHub publishing requires `GH_TOKEN` only in the service environment,
+with access to the chosen repository; it uploads a draft asset before publishing
+the reviewed release. Release visibility follows repository visibility. Optional
+Hugging Face publishing uses server-side `HF_TOKEN` and a **new private** model repo.
+No training corpus, chart, reflection, or credential is included, but model weights
+may memorize training material: inspect your training source before publishing.
+
+For **GitHub Release + project page**, merge this PR first and set repository
+Settings → Pages → Source to GitHub Actions. The token must allow workflow dispatch.
+The owner-only `publish-project-page.yml` verifies the approved release ZIP's digest
+and deploys its escaped static `index.html` through the `github-pages` environment.
+Configure that environment to require your approval if you want an additional
+deployment review. Publishing a project page replaces the repository's existing
+Pages site. Other destination repositories need the same workflow installed.
+A requested workflow is not a successful deployment; inspect its Actions result.
+
+The supplied private Drive corpus is intentionally excluded from this public
+repository. To use a separately downloaded corpus locally, launch with
+`python local-learning/service.py --corpus /path/to/corpus.json`.

@@ -20,3 +20,15 @@ jobs:
         with:
           node-version: '22'
       - run: python scripts/check_app.py
+  neural-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - run: python tests/smoke_trident.py
