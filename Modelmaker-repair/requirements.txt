@@ -4,3 +4,4 @@ safetensors>=0.4
 tokenizers>=0.20
 torch>=2.2
 transformers>=4.46,<6
+
