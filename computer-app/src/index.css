@@ -186,3 +186,5 @@
 }
 
 @media(max-width:700px){.computer-settings{flex-direction:column}.computer-settings>div:first-child{width:100%;max-height:145px;border-right:0;border-bottom:1px solid var(--border-subtle)}.computer-settings>div:nth-child(2){min-height:0;padding:18px}.computer-settings h2{font-size:1.3rem}}
+
+@media(max-width:700px){.computer-top-panel>div:last-child>button{display:none}.computer-top-panel>button{position:relative!important;left:auto!important;transform:none!important}.computer-top-panel>div:last-child{min-width:30px}}
