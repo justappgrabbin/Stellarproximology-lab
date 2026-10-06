@@ -322,8 +322,26 @@ def build_ui():
             "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
         )
 
+        with gr.Accordion("Build & evolve with personal approval", open=False):
+            gr.Markdown(
+                "### Research → approve push → check → approve merge\n"
+                "Candidate research reads app source and prepares a reviewable artifact. "
+                "It never executes its generated code or pushes automatically.\n\n"
+                "1. Download the candidate and review its complete files and SHA-256.\n"
+                "2. Approve that digest in **Evolution approved push** to create a draft PR.\n"
+                "3. Review checks and the diff, mark the PR ready, then approve its exact commit SHA.\n\n"
+                "GitHub verifies `justappgrabbin` as the approver. No GitHub write token is stored in this public UI. "
+                "The workflows require the setup PR to be merged, then a configured coding model and inference token. "
+                "Weekly generation is opt-in; model publishing and deployment stay separate."
+            )
+            with gr.Row():
+                gr.Button("Prepare a candidate", link="https://github.com/justappgrabbin/Stellarproximology-lab/actions/workflows/evolution-propose.yml")
+                gr.Button("Approve candidate push", link="https://github.com/justappgrabbin/Stellarproximology-lab/actions/workflows/evolution-push.yml")
+                gr.Button("Approve checked merge", link="https://github.com/justappgrabbin/Stellarproximology-lab/actions/workflows/evolution-merge.yml")
+
     return demo
 
 
 if __name__ == "__main__":
     build_ui().launch()
+

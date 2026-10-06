@@ -1,0 +1,43 @@
+name: Evolution research and candidate
+on:
+  workflow_dispatch:
+    inputs:
+      need:
+        description: Improvement or experiment to investigate (do not include private client data)
+        required: true
+        default: Inspect the app and propose one small reliability or usability improvement.
+  schedule:
+    - cron: '21 9 * * 1'
+permissions:
+  contents: read
+concurrency:
+  group: evolution-research
+  cancel-in-progress: false
+jobs:
+  propose:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.actor == 'justappgrabbin') ||
+      (github.event_name == 'schedule' && vars.EVOLUTION_SCHEDULE_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'huggingface_hub>=0.28,<2'
+      - name: Prepare a candidate; never push or execute generated code
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HF_TOKEN: ${{ secrets.EVOLUTION_HF_TOKEN }}
+          EVOLUTION_MODEL: ${{ vars.EVOLUTION_MODEL }}
+          NEED: ${{ inputs.need || 'Inspect the app and propose one small reliability or usability improvement.' }}
+        run: python scripts/evolution.py propose --need "$NEED" --output candidate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evolution-candidate
+          path: candidate/
+          retention-days: 14
+          if-no-files-found: error

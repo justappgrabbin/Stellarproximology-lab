@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "repository": "justappgrabbin/Stellarproximology-lab",
+  "approver": "justappgrabbin",
+  "base_branch": "main",
+  "max_files": 6,
+  "max_total_bytes": 180000,
+  "allowed_prefixes": ["human-design/dist/", "Modelmaker-repair/"],
+  "blocked_paths": ["human-design/dist/corpus.json", "Modelmaker-repair/requirements.txt", "Modelmaker-repair/README_FRONTMATTER.txt"],
+  "allowed_extensions": [".py", ".mjs", ".js", ".html", ".css", ".md", ".svg"],
+  "research_sources": [
+    "https://github.com/justappgrabbin/Stellarproximology-lab",
+    "https://huggingface.co/spaces/stellarproximology/Modelmaker"
+  ]
+}

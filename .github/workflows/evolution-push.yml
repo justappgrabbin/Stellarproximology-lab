@@ -1,0 +1,98 @@
+name: Evolution approved push
+on:
+  workflow_dispatch:
+    inputs:
+      research_run_id:
+        description: Successful Evolution research run containing the candidate
+        required: true
+      candidate_digest:
+        description: Approved SHA-256 from REVIEW.md (64 characters)
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: evolution-approved-write
+  cancel-in-progress: false
+jobs:
+  push:
+    if: github.actor == 'justappgrabbin' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    outputs:
+      sha: ${{ steps.push.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify candidate run provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.research_run_id }}
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          sys.path.insert(0, 'scripts')
+          from evolution import api, repo_path
+          run_id = os.environ['RUN_ID']
+          if not run_id.isdigit(): raise ValueError('Expected numeric run ID')
+          run = api('GET', repo_path('/actions/runs/' + run_id))
+          if run['path'] != '.github/workflows/evolution-propose.yml' or run['conclusion'] != 'success' or run['head_branch'] != 'main':
+              raise ValueError('Candidate must come from a successful trusted research run on main')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: evolution-candidate
+          path: candidate
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.research_run_id }}
+      - name: Push only personally approved exact contents to a draft PR
+        id: push
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_DIGEST: ${{ inputs.candidate_digest }}
+          APPROVER: ${{ github.actor }}
+        run: python scripts/evolution.py push --proposal candidate/proposal.json --digest "$APPROVED_DIGEST" --actor "$APPROVER"
+  validate:
+    needs: push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.push.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check candidate without write credentials or model secrets
+        run: python scripts/check_app.py
+  status:
+    if: always() && needs.push.result == 'success'
+    needs: [push, validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      statuses: write
+    steps:
+      - name: Record the outcome on the exact pushed commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.push.outputs.sha }}
+          RESULT: ${{ needs.validate.result }}
+          REPO: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          body = {'state': 'success' if os.environ['RESULT'] == 'success' else 'failure', 'context': 'evolution/validated', 'description': 'Credential-free candidate checks: ' + os.environ['RESULT']}
+          request = urllib.request.Request('https://api.github.com/repos/' + os.environ['REPO'] + '/statuses/' + os.environ['SHA'], data=json.dumps(body).encode(), headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Content-Type': 'application/json'}, method='POST')
+          with urllib.request.urlopen(request, timeout=30) as response: print('Status recorded:', response.status)
+          PY

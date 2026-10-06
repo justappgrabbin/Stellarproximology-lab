@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+candidate/
+push-result.json
+human-design/dist/corpus.json

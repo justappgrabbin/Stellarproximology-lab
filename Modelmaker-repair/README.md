@@ -10,3 +10,4 @@ Non-destructive repair package for the Hugging Face Space `stellarproximology/Mo
 4. Optional: add a Hugging Face write token as a Space secret named `HF_TOKEN` to allow Modelmaker to publish trained models.
 
 The app can ingest training text/files, train a compact GPT-style causal language model, export it in Hugging Face `save_pretrained()` format, and return the built model as a ZIP.
+
