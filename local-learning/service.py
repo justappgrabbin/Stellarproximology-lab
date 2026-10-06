@@ -195,7 +195,7 @@ class Workspace:
 
     def bundle(self, identifier):
         model=self.get('models',identifier); folder=self.path(identifier)/'model'
-        report=f"# {model['name']}\n\nEngine: {model['engine']}\nHead: {model['head']}\n\n{model['quality']}\n\n## Evaluation\n```json\n{json.dumps(model['metrics'],indent=2)}\n```\n\nTraining and held-out losses are recorded on separate non-overlapping text windows. They do not establish factual accuracy or instruction-following ability.\n\nTraining data, birth details, reflections, credentials, and worker logs are excluded. Model weights can still memorize training material; review the corpus before publishing.\n"
+        report=f"# {model['name']}\n\nEngine: {model['engine']}\nHead: {model['head']}\n\n{model['quality']}\n\n## Evaluation\n{chr(10).join(str(key).replace('_',' ').title()+': '+str(value) for key,value in model['metrics'].items())}\n\nTraining and held-out losses are recorded on separate non-overlapping text windows. They do not establish factual accuracy or instruction-following ability.\n\nTraining data, birth details, reflections, credentials, and worker logs are excluded. Model weights can still memorize training material; review the corpus before publishing.\n"
         data=io.BytesIO()
         with zipfile.ZipFile(data,'w',zipfile.ZIP_DEFLATED) as archive:
             archive.writestr('README.md',report)
@@ -322,7 +322,10 @@ class Workspace:
             write_json(folder/'route-task.json',task)
             write_json(route_folder/(identifier+'.json'),task)
             if report['route']=='papers':
-                draft='# Research draft: '+name+'\n\nStatus: computational report awaiting author review.\n\n## Method\nLossless dictionary-index reduction, exact SHA-256 reconstruction verification, and five execution partitions (Movement, Evolution, Being, Design, Space).\n\n## Recorded results\n```json\n'+json.dumps({'sourceHash':report['sourceHash'],'statistics':report['statistics'],'findings':report['findings']},indent=2)+'\n```\n\n## Limitations\nThis draft does not establish scientific validity for Human Design or field correspondences. Add literature citations, comparison experiments, interpretation, and author approval before publishing.\n'
+                stats=report['statistics']
+                metrics='\n'.join('- '+key.replace('_',' ').title()+': '+str(value) for key,value in stats.items())
+                findings='\n'.join('- '+f['message'] for f in report['findings']) or 'No issues were flagged by the fixed checks.'
+                draft='# Research draft: '+name+'\n\nStatus: computational report awaiting author review.\n\n## Method\nLossless dictionary-index reduction, exact reconstruction verification, and five execution partitions (Movement, Evolution, Being, Design, Space).\n\n## Recorded results\n'+metrics+'\n\n## Findings\n'+findings+'\n\n## Limitations\nThis draft does not establish scientific validity for Human Design or field correspondences. Add literature citations, comparison experiments, interpretation, and author approval before publishing.\n\nSource fingerprint: '+report['sourceHash']+'\n'
                 (folder/'paper-draft.md').write_text(draft)
             record={'id':identifier,'name':name,'created':now(),'route':report['route'],'sourceHash':report['sourceHash'],'reportHash':report['reportHash'],'status':'recorded','report':report,'task':task}
             self.state['analyses'].append(record); self.save(); return record

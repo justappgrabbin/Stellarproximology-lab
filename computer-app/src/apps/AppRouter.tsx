@@ -2,6 +2,7 @@
 // App Router — Maps appId to component
 // ============================================================
 
+import {getAppById} from './registry';
 import NotImplemented from '@/components/NotImplemented';
 import FileManager from './FileManager';
 import Terminal from './Terminal';
@@ -66,15 +67,19 @@ interface AppRouterProps {
 }
 
 const AppRouter: FC<AppRouterProps> = ({ appId }) => {
+  const host=new URLSearchParams(location.search).get('host')==='synthai2';
+  const component=getAppById(appId)?.component;
+  if(appId.startsWith('host-')&&component?.startsWith('/')&&!component.startsWith('//'))return <iframe src={component} title={getAppById(appId)?.name} style={{width:'100%',height:'100%',border:0}} />;
+  const phoneRoot=host?'/synthia-phone/index.html':'/index.html';
   switch (appId) {
     case 'synthia':
-      return <iframe src="/index.html?phone=1" title="Synthia phone app" style={{width:'100%',height:'100%',border:0}} />;
+      return <iframe src={phoneRoot+'?phone=1'} title="Synthia phone app" style={{width:'100%',height:'100%',border:0}} />;
     case 'synthia-lab':
-      return <iframe src="/index.html?panel=autolab" title="Synthia Auto Lab" style={{width:'100%',height:'100%',border:0}} />;
+      return <iframe src={phoneRoot+'?panel=autolab'} title="Synthia Auto Lab" style={{width:'100%',height:'100%',border:0}} />;
     case 'synthia-swarm':
-      return <iframe src="/index.html?panel=swarm" title="Synthia Swarm" style={{width:'100%',height:'100%',border:0}} />;
+      return <iframe src={phoneRoot+'?panel=swarm'} title="Synthia Swarm" style={{width:'100%',height:'100%',border:0}} />;
     case 'synthia-studio':
-      return <iframe src="/index.html?panel=studio" title="Publishing Studio" style={{width:'100%',height:'100%',border:0}} />;
+      return <iframe src={phoneRoot+'?panel=studio'} title="Publishing Studio" style={{width:'100%',height:'100%',border:0}} />;
     case 'filemanager':
       return <FileManager />;
     case 'terminal':

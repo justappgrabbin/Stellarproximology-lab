@@ -14,7 +14,7 @@ try{
  const bounds=await page.locator('.computer-window').boundingBox();
  assert(bounds.width<=390&&bounds.x>=0,'Phone app window must fit viewport');
  await page.getByRole('button',{name:'⌂ Home',exact:true}).click();
- await page.getByRole('button',{name:'Open Settings',exact:true}).click();
+ await page.getByRole('button',{name:'Open System Settings',exact:true}).click();
  await page.getByRole('button',{name:'Background',exact:true}).click();
  await page.locator('button').filter({hasText:'Nature'}).last().click();
  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('synthia_computer_preferences')));

@@ -436,7 +436,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full" style={{ background: 'var(--bg-window)' }}>
+    <div className="computer-settings flex h-full" style={{ background: 'var(--bg-window)' }}>
       {/* Sidebar */}
       <div className="w-56 shrink-0 border-r flex flex-col" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-titlebar)' }}>
         <div className="p-2">

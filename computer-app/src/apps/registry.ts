@@ -510,6 +510,12 @@ export const APP_REGISTRY: AppDefinition[] = [
   },
 ];
 
+// The hub also launches SynthAI2's existing applications when mounted there.
+if(new URLSearchParams(location.search).get('host')==='synthai2'){
+ const hostApps=[['ide','IDE'],['ingest','Ingest & Mount'],['mesh','Mesh'],['novel','Novel Writer'],['game-creator','Game Creator'],['gan-trainer','GAN Trainer'],['autonomy','Autonomy'],['universe-creator','Universe Creator'],['agents','Agents'],['human-design','Existing BodyGraph Studio'],['grove-store','Grove Store']];
+ for(const [path,name] of hostApps)APP_REGISTRY.push({id:'host-'+path,name,icon:'AppWindow',category:'Productivity',description:'Open the existing SynthAI2 application',component:'/'+path,defaultSize:{width:1100,height:750},minSize:{width:340,height:400}});
+}
+
 export const getAppById = (id: string): AppDefinition | undefined =>
   APP_REGISTRY.find((a) => a.id === id);
 
