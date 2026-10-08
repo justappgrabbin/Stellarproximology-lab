@@ -15,6 +15,7 @@ import torch
 from huggingface_hub import HfApi
 from tokenizers import ByteLevelBPETokenizer
 from transformers import GPT2Config, GPT2LMHeadModel, GPT2TokenizerFast
+from morph_ui import build_morph_tab
 
 APP_TITLE = "Modelmaker"
 DEFAULT_NAMESPACE = "stellarproximology"
@@ -259,71 +260,74 @@ def train_model(
 
 def build_ui():
     with gr.Blocks(title=APP_TITLE, theme=gr.themes.Soft()) as demo:
-        gr.Markdown(
-            "# 🧬 Modelmaker\n"
-            "Build a compact causal LLM from your own material. The result is saved in Hugging Face `save_pretrained()` format."
-        )
+        build_morph_tab()
+        with gr.Tab("Text model"):
+            gr.Markdown(
+                "# 🧬 Modelmaker\n"
+                "Build a compact causal LLM from your own material. The result is saved in Hugging Face `save_pretrained()` format."
+            )
 
-        with gr.Row():
-            with gr.Column(scale=3):
-                model_name = gr.Textbox(label="Model name", value="synthia-seed")
-                pasted_text = gr.Textbox(
-                    label="Training text",
-                    lines=14,
-                    placeholder="Paste training material here, or upload files below.",
-                )
-                files = gr.File(
-                    label="Training files",
-                    file_count="multiple",
-                    file_types=[".txt", ".md", ".json", ".jsonl", ".py", ".js", ".ts", ".html", ".css", ".csv"],
-                )
+            with gr.Row():
+                with gr.Column(scale=3):
+                    model_name = gr.Textbox(label="Model name", value="synthia-seed")
+                    pasted_text = gr.Textbox(
+                        label="Training text",
+                        lines=14,
+                        placeholder="Paste training material here, or upload files below.",
+                    )
+                    files = gr.File(
+                        label="Training files",
+                        file_count="multiple",
+                        file_types=[".txt", ".md", ".json", ".jsonl", ".py", ".js", ".ts", ".html", ".css", ".csv"],
+                    )
 
-            with gr.Column(scale=2):
-                gr.Markdown("### Model shape")
-                vocab_size = gr.Slider(512, 16000, value=4096, step=256, label="Vocabulary")
-                context_length = gr.Slider(32, 512, value=128, step=32, label="Context length")
-                layers = gr.Slider(1, 12, value=2, step=1, label="Transformer layers")
-                heads = gr.Dropdown([1, 2, 4, 8], value=4, label="Attention heads")
-                embedding_size = gr.Dropdown([64, 128, 256, 512], value=256, label="Embedding size")
+                with gr.Column(scale=2):
+                    gr.Markdown("### Model shape")
+                    vocab_size = gr.Slider(512, 16000, value=4096, step=256, label="Vocabulary")
+                    context_length = gr.Slider(32, 512, value=128, step=32, label="Context length")
+                    layers = gr.Slider(1, 12, value=2, step=1, label="Transformer layers")
+                    heads = gr.Dropdown([1, 2, 4, 8], value=4, label="Attention heads")
+                    embedding_size = gr.Dropdown([64, 128, 256, 512], value=256, label="Embedding size")
 
-                gr.Markdown("### Training")
-                epochs = gr.Slider(1, 20, value=2, step=1, label="Epochs")
-                batch_size = gr.Dropdown([1, 2, 4, 8, 16], value=4, label="Batch size")
-                learning_rate = gr.Number(value=0.0003, label="Learning rate")
-                push_to_hub = gr.Checkbox(
-                    value=False,
-                    label="Push model to Hugging Face after training (requires HF_TOKEN Space secret)",
-                )
+                    gr.Markdown("### Training")
+                    epochs = gr.Slider(1, 20, value=2, step=1, label="Epochs")
+                    batch_size = gr.Dropdown([1, 2, 4, 8, 16], value=4, label="Batch size")
+                    learning_rate = gr.Number(value=0.0003, label="Learning rate")
+                    push_to_hub = gr.Checkbox(
+                        value=False,
+                        label="Push model to Hugging Face after training (requires HF_TOKEN Space secret)",
+                    )
 
-        build = gr.Button("Build model", variant="primary")
-        status = gr.Markdown()
-        artifact = gr.File(label="Built model package")
+            build = gr.Button("Build model", variant="primary")
+            status = gr.Markdown()
+            artifact = gr.File(label="Built model package")
 
-        build.click(
-            fn=train_model,
-            inputs=[
-                model_name,
-                pasted_text,
-                files,
-                vocab_size,
-                context_length,
-                layers,
-                heads,
-                embedding_size,
-                epochs,
-                batch_size,
-                learning_rate,
-                push_to_hub,
-            ],
-            outputs=[status, artifact],
-        )
+            build.click(
+                fn=train_model,
+                inputs=[
+                    model_name,
+                    pasted_text,
+                    files,
+                    vocab_size,
+                    context_length,
+                    layers,
+                    heads,
+                    embedding_size,
+                    epochs,
+                    batch_size,
+                    learning_rate,
+                    push_to_hub,
+                ],
+                outputs=[status, artifact],
+            )
 
-        gr.Markdown(
-            "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
-        )
+            gr.Markdown(
+                "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
+            )
 
     return demo
 
 
 if __name__ == "__main__":
     build_ui().launch()
+
