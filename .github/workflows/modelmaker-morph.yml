@@ -1,0 +1,26 @@
+name: Modelmaker neural morph checks
+on:
+  push:
+    branches: [feature/modelmaker-neural-morph]
+    paths: ['Modelmaker-repair/**', '.github/workflows/modelmaker-morph.yml']
+  pull_request:
+    paths: ['Modelmaker-repair/**', '.github/workflows/modelmaker-morph.yml']
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --test tests/*.test.mjs
+        working-directory: Modelmaker-repair/morph-studio
+      - run: python -m pip install onnx onnxruntime numpy
+      - run: node tests/export-fixture.mjs && python tests/check_onnx.py
+        working-directory: Modelmaker-repair/morph-studio
+      - run: python -m py_compile Modelmaker-repair/app.py Modelmaker-repair/morph_ui.py
