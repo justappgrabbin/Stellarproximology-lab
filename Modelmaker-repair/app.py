@@ -84,9 +84,11 @@ def _build_tokenizer(text_path: Path, output_dir: Path, vocab_size: int) -> GPT2
     )
     trainer.save_model(str(tokenizer_dir))
 
-    tokenizer = GPT2TokenizerFast(
-        vocab_file=str(tokenizer_dir / "vocab.json"),
-        merges_file=str(tokenizer_dir / "merges.txt"),
+    # Load from the saved vocab.json/merges.txt via from_pretrained. transformers 5.x
+    # no longer accepts vocab_file=/merges_file= in the constructor (they are silently
+    # ignored, leaving an empty vocabulary); from_pretrained works on 4.x and 5.x.
+    tokenizer = GPT2TokenizerFast.from_pretrained(
+        str(tokenizer_dir),
         bos_token="<|bos|>",
         eos_token="<|eos|>",
         unk_token="<|unk|>",
