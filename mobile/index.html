@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1422"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg">
+<title>Stellar / Living Lab</title><link rel="stylesheet" href="style.css"></head>
+<body><header><span class="mark">✧</span><div><small>STELLAR PROXIMOLOGY</small><h1>Living Lab</h1></div><span id="connection" class="badge">Local</span></header>
+<main><section class="hero"><span class="eyebrow">FOUR PERSPECTIVES · ONE LIVING SPACE</span><h2>Learn. Build.<br>Become.</h2>
+<p>Your phone holds the memory. Movement, Evolution, Being and Design contribute to the space you inhabit.</p>
+<canvas id="scene" aria-label="Interactive projection of the swarm"></canvas><p class="caption">Touch the space. Zoom to see its units.</p>
+<div class="stats"><div><b id="unit-count">0</b><small>embodied units</small></div><div><b id="capability-count">0</b><small>verified capabilities</small></div><div><b id="memory-count">0</b><small>observations</small></div></div></section>
+<section><div class="section-title"><h3>Give it a direction</h3><span id="worker-status">Ready</span></div>
+<form id="goal-form"><label for="goal">What should the system investigate?</label><textarea id="goal" maxlength="500">Build the 64 hexagram units for each perspective, preserving their different meanings.</textarea>
+<button id="start" class="primary">Research & build</button><button id="stop" type="button" class="secondary" hidden>Stop after current step</button></form>
+<label class="toggle"><input id="autonomous" type="checkbox"> Follow research questions automatically <small>Up to 3 jobs per session</small></label>
+<button id="demo" class="secondary">Try the offline builder demo</button><p class="hint">The demo tests real candidate code locally. Live research and generation need your private model connection.</p></section>
+<section><div class="section-title"><h3>The four perspectives</h3><span>Distinct, together</span></div><div id="perspectives" class="perspectives"></div></section>
+<section><div class="section-title"><h3>Memory & evidence</h3><button id="export" class="text-button">Export</button></div><div id="journal" aria-live="polite"><p class="hint">Research, hypotheses, tests and disagreements will appear here.</p></div></section>
+<details><summary>Model connection</summary><p>Connect your private inference service. Provider credentials stay on that service.</p>
+<label for="endpoint">Service URL</label><input id="endpoint" type="url" placeholder="https://your-private-service.example">
+<label for="access">Connection password, if required</label><input id="access" type="password" autocomplete="off">
+<button id="save-connection" class="secondary">Save connection</button><p class="hint">The URL saves on this phone; the password lasts only for this tab.</p></details>
+<p id="notice" role="status"></p><footer>Offline memory · Versioned capabilities · No forced agreement<br>Background activity pauses when your phone suspends the app.</footer></main>
+<script type="module" src="app.js"></script></body></html>
