@@ -11,6 +11,7 @@ import math
 import random
 import sqlite3
 import uuid
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,10 +38,12 @@ class AdaptivePeople:
                 ON person_events(person_id, observer_id, id)
             """)
 
+    @contextmanager
     def _connect(self):
-        db = sqlite3.connect(str(self.path), timeout=15)
-        db.row_factory = sqlite3.Row
-        return db
+        with closing(sqlite3.connect(str(self.path), timeout=15)) as db:
+            db.row_factory = sqlite3.Row
+            with db:
+                yield db
 
     @staticmethod
     def _identity(value, label):
