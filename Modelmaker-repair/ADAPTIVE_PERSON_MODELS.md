@@ -6,25 +6,25 @@ This folder contains the **existing** GPT-style Modelmaker training function and
 
 - **Individual observations:** An explicitly attributed statement about a consenting person becomes an immutable event.
 - **Evolving preferences:** Topic/value/evidence are stored as events; a newer correction becomes the active preference without deleting prior evidence.
-- **Observer perspectives:** The Python API scopes records to the \`(person_id, observer_id)\` pair. The Gradio interface currently uses the \`self\` perspective.
+- **Observer perspectives:** The Python API scopes records to the `(person_id, observer_id)` pair. The Gradio interface currently uses the `self` perspective.
 - **Pre-action clarification:** When no prior evidence exists, a recommendation flags the cold start and asks which of the supplied actions the person actually prefers.
 - **Personalized recommendations:** A contextual, outcome-driven **Thompson sampler** selects among actions supplied at runtime. Each action's reward estimate uses prior feedback, weighted by agreement with the current context. No content topics or human-design categories are hard-coded.
-- **Post-action learning:** Recording helpfulness in \`[0,1]\` updates future action selection. Corrections append a new feedback event and supersede the previous value *in the learned projection only*.
+- **Post-action learning:** Recording helpfulness in `[0,1]` updates future action selection. Corrections append a new feedback event and supersede the previous value *in the learned projection only*.
 - **Persistence:** Person-specific, append-only event history is held in a local SQLite file. The active view is reconstructed from the history, so the earlier state is recoverable.
 
-Core code: \`adaptive_person.py\` (Python standard library). UI: the **Adaptive personal models** tab in \`app.py\`. Existing language-model training remains in the **Language model** tab.
+Core code: `adaptive_person.py` (Python standard library). UI: the **Adaptive personal models** tab in `app.py`. Existing language-model training remains in the **Language model** tab.
 
 ## Run and test
 
-The original requirements in \`requirements.txt\` are still needed to run the Gradio interface.
+The original requirements in `requirements.txt` are still needed to run the Gradio interface.
 
-\`\`\`sh
+```sh
 cd Modelmaker-repair
 python -m unittest discover -s . -p 'test_adaptive_person.py' -v
 python app.py
-\`\`\`
+```
 
-The SQLite file defaults to \`~/.modelmaker/adaptive.sqlite3\`. Set \`MODELMAKER_ADAPTIVE_DB\` to a trusted persistent path to override that location. The default is **not guaranteed durable** on an ephemeral hosted Space. Store no personal test data on a public Space.
+The SQLite file defaults to `~/.modelmaker/adaptive.sqlite3`. Set `MODELMAKER_ADAPTIVE_DB` to a trusted persistent path to override that location. The default is **not guaranteed durable** on an ephemeral hosted Space. Store no personal test data on a public Space.
 
 ## Evidence and integration boundaries
 
