@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterable
 
 import gradio as gr
+from adaptive_person import AdaptivePeople
 import torch
 from huggingface_hub import HfApi
 from tokenizers import ByteLevelBPETokenizer
@@ -259,70 +260,204 @@ def train_model(
         return f"### Build failed\n**{type(exc).__name__}:** {exc}\n\n```text\n{detail}\n```", None
 
 
+def _adaptive_engine() -> AdaptivePeople:
+    location = os.getenv("MODELMAKER_ADAPTIVE_DB", "").strip()
+    path = Path(location) if location else Path.home() / ".modelmaker" / "adaptive.sqlite3"
+    return AdaptivePeople(path)
+
+
+def _person_summary(person_id: str) -> str:
+    model = _adaptive_engine().profile(person_id)
+    lines = [
+        f"Person: {model['person_id']}",
+        f"Recorded events: {model['event_count']}",
+        f"Recommendations evaluated: {model['evaluated_recommendations']} / {model['recommendation_count']}",
+        "",
+        "Current preferences (prior corrections remain in the history):",
+    ]
+    preferences = model["current_preferences"]
+    if preferences:
+        for topic, detail in sorted(preferences.items()):
+            lines.append(f"- {topic}: {detail['value']} (evidence: {detail['evidence']})")
+    else:
+        lines.append("- None recorded yet")
+    lines.append("")
+    lines.append("Observed statements:")
+    observations = model["observations"]
+    if observations:
+        for item in observations[-10:]:
+            lines.append(f"- {item['statement']} (source: {item['source']})")
+    else:
+        lines.append("- None recorded yet")
+    return "\n".join(lines)
+
+
+def _adaptive_observe(person_id, statement, source):
+    try:
+        event_id = _adaptive_engine().observe(person_id, statement, source)
+        return f"Recorded observation #{event_id}.", _person_summary(person_id)
+    except (ValueError, OSError) as exc:
+        return f"Could not record observation: {exc}", ""
+
+
+def _adaptive_preference(person_id, topic, value, evidence):
+    try:
+        event_id = _adaptive_engine().remember_preference(person_id, topic, value, evidence)
+        return f"Recorded preference update #{event_id}. Earlier values remain in history.", _person_summary(person_id)
+    except (ValueError, OSError) as exc:
+        return f"Could not update preference: {exc}", ""
+
+
+def _adaptive_recommend(person_id, options_text, situation):
+    try:
+        options = [line.strip() for line in options_text.splitlines() if line.strip()]
+        context = {"situation": situation.strip()} if situation.strip() else {}
+        result = _adaptive_engine().recommend(person_id, options, context)
+        message = f"Recommended: {result['action']}\nOutcome evidence for this choice: {result['observed_outcomes']} observations."
+        if result["clarifying_question"]:
+            message += "\nAsk before acting: " + result["clarifying_question"]
+        message += "\nRecord the actual outcome below to help this person-specific model adapt."
+        return message, result["request_id"], _person_summary(person_id)
+    except (ValueError, OSError) as exc:
+        return f"Could not recommend: {exc}", "", ""
+
+
+def _adaptive_feedback(person_id, request_id, reward, explanation):
+    try:
+        event_id = _adaptive_engine().feedback(person_id, request_id, reward, explanation)
+        return f"Recorded outcome #{event_id}; future selections now use this result.", _person_summary(person_id)
+    except (ValueError, OSError) as exc:
+        return f"Could not record outcome: {exc}", ""
+
+
+def _adaptive_inspect(person_id):
+    try:
+        return _person_summary(person_id)
+    except (ValueError, OSError) as exc:
+        return f"Unable to inspect: {exc}"
+
+
 def build_ui():
     with gr.Blocks(title=APP_TITLE, theme=gr.themes.Soft()) as demo:
-        gr.Markdown(
-            "# 🧬 Modelmaker\n"
-            "Build a compact causal LLM from your own material. The result is saved in Hugging Face `save_pretrained()` format."
-        )
+        with gr.Tab("Language model"):
+            gr.Markdown(
+                "# 🧬 Modelmaker\n"
+                "Build a compact causal LLM from your own material. The result is saved in Hugging Face `save_pretrained()` format."
+            )
 
-        with gr.Row():
-            with gr.Column(scale=3):
-                model_name = gr.Textbox(label="Model name", value="synthia-seed")
-                pasted_text = gr.Textbox(
-                    label="Training text",
-                    lines=14,
-                    placeholder="Paste training material here, or upload files below.",
-                )
-                files = gr.File(
-                    label="Training files",
-                    file_count="multiple",
-                    file_types=[".txt", ".md", ".json", ".jsonl", ".py", ".js", ".ts", ".html", ".css", ".csv"],
-                )
+            with gr.Row():
+                with gr.Column(scale=3):
+                    model_name = gr.Textbox(label="Model name", value="synthia-seed")
+                    pasted_text = gr.Textbox(
+                        label="Training text",
+                        lines=14,
+                        placeholder="Paste training material here, or upload files below.",
+                    )
+                    files = gr.File(
+                        label="Training files",
+                        file_count="multiple",
+                        file_types=[".txt", ".md", ".json", ".jsonl", ".py", ".js", ".ts", ".html", ".css", ".csv"],
+                    )
 
-            with gr.Column(scale=2):
-                gr.Markdown("### Model shape")
-                vocab_size = gr.Slider(512, 16000, value=4096, step=256, label="Vocabulary")
-                context_length = gr.Slider(32, 512, value=128, step=32, label="Context length")
-                layers = gr.Slider(1, 12, value=2, step=1, label="Transformer layers")
-                heads = gr.Dropdown([1, 2, 4, 8], value=4, label="Attention heads")
-                embedding_size = gr.Dropdown([64, 128, 256, 512], value=256, label="Embedding size")
+                with gr.Column(scale=2):
+                    gr.Markdown("### Model shape")
+                    vocab_size = gr.Slider(512, 16000, value=4096, step=256, label="Vocabulary")
+                    context_length = gr.Slider(32, 512, value=128, step=32, label="Context length")
+                    layers = gr.Slider(1, 12, value=2, step=1, label="Transformer layers")
+                    heads = gr.Dropdown([1, 2, 4, 8], value=4, label="Attention heads")
+                    embedding_size = gr.Dropdown([64, 128, 256, 512], value=256, label="Embedding size")
 
-                gr.Markdown("### Training")
-                epochs = gr.Slider(1, 20, value=2, step=1, label="Epochs")
-                batch_size = gr.Dropdown([1, 2, 4, 8, 16], value=4, label="Batch size")
-                learning_rate = gr.Number(value=0.0003, label="Learning rate")
-                push_to_hub = gr.Checkbox(
-                    value=False,
-                    label="Push model to Hugging Face after training (requires HF_TOKEN Space secret)",
-                )
+                    gr.Markdown("### Training")
+                    epochs = gr.Slider(1, 20, value=2, step=1, label="Epochs")
+                    batch_size = gr.Dropdown([1, 2, 4, 8, 16], value=4, label="Batch size")
+                    learning_rate = gr.Number(value=0.0003, label="Learning rate")
+                    push_to_hub = gr.Checkbox(
+                        value=False,
+                        label="Push model to Hugging Face after training (requires HF_TOKEN Space secret)",
+                    )
 
-        build = gr.Button("Build model", variant="primary")
-        status = gr.Markdown()
-        artifact = gr.File(label="Built model package")
+            build = gr.Button("Build model", variant="primary")
+            status = gr.Markdown()
+            artifact = gr.File(label="Built model package")
 
-        build.click(
-            fn=train_model,
-            inputs=[
-                model_name,
-                pasted_text,
-                files,
-                vocab_size,
-                context_length,
-                layers,
-                heads,
-                embedding_size,
-                epochs,
-                batch_size,
-                learning_rate,
-                push_to_hub,
-            ],
-            outputs=[status, artifact],
-        )
+            build.click(
+                fn=train_model,
+                inputs=[
+                    model_name,
+                    pasted_text,
+                    files,
+                    vocab_size,
+                    context_length,
+                    layers,
+                    heads,
+                    embedding_size,
+                    epochs,
+                    batch_size,
+                    learning_rate,
+                    push_to_hub,
+                ],
+                outputs=[status, artifact],
+            )
 
-        gr.Markdown(
-            "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
-        )
+            gr.Markdown(
+                "Small models are intentional here: Modelmaker should create testable specialized brains first, then scale only when the data and role justify it."
+            )
+
+        with gr.Tab("Adaptive personal models"):
+            gr.Markdown(
+                "## Adaptive personal learning\n"
+                "Record what a person actually says, refine their preferences, "
+                "recommend from your own set of possible actions, and learn from outcomes. "
+                "Uses a local SQLite event history; no outside AI model is required. "
+                "**Use only with the person's consent.** This tool is for trusted local use: "
+                "add authentication and durable private storage before hosting it for multiple people."
+            )
+            person_id = gr.Textbox(label="Person ID", placeholder="A stable identifier for one consenting participant")
+            with gr.Row():
+                observation = gr.Textbox(label="New observation", lines=2)
+                observation_source = gr.Textbox(label="Evidence source", value="Person-stated")
+            observe_button = gr.Button("Record observation")
+            gr.Markdown("### Learn or correct a preference")
+            with gr.Row():
+                pref_topic = gr.Textbox(label="Preference topic", placeholder="Learning pace")
+                pref_value = gr.Textbox(label="What the person prefers")
+                pref_evidence = gr.Textbox(label="What evidence supports this?")
+            preference_button = gr.Button("Update preference")
+            gr.Markdown("### Recommend, observe, and adapt")
+            with gr.Row():
+                options = gr.Textbox(label="Available actions (one per line)", lines=4)
+                situation = gr.Textbox(label="Current situation", lines=4)
+            recommend_button = gr.Button("Recommend a next action")
+            request_id = gr.Textbox(label="Recommendation ID (links feedback to that choice)", interactive=True)
+            with gr.Row():
+                reward = gr.Slider(0, 1, value=0.5, step=0.1, label="How helpful was it? (0–1)")
+                outcome = gr.Textbox(label="What actually happened?", lines=2)
+            feedback_button = gr.Button("Learn from outcome")
+            inspect_button = gr.Button("Inspect current person model")
+            status_person = gr.Textbox(label="Latest result", lines=4, interactive=False)
+            profile_person = gr.Textbox(label="Evolving person model", lines=12, interactive=False)
+
+            observe_button.click(
+                fn=_adaptive_observe,
+                inputs=[person_id, observation, observation_source],
+                outputs=[status_person, profile_person],
+            )
+            preference_button.click(
+                fn=_adaptive_preference,
+                inputs=[person_id, pref_topic, pref_value, pref_evidence],
+                outputs=[status_person, profile_person],
+            )
+            recommend_button.click(
+                fn=_adaptive_recommend,
+                inputs=[person_id, options, situation],
+                outputs=[status_person, request_id, profile_person],
+            )
+            feedback_button.click(
+                fn=_adaptive_feedback,
+                inputs=[person_id, request_id, reward, outcome],
+                outputs=[status_person, profile_person],
+            )
+            inspect_button.click(fn=_adaptive_inspect, inputs=[person_id], outputs=[profile_person])
 
     return demo
 

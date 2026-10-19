@@ -1,0 +1,26 @@
+name: Modelmaker adaptive personal models
+on:
+  pull_request:
+    paths:
+      - 'Modelmaker-repair/adaptive_person.py'
+      - 'Modelmaker-repair/test_adaptive_person.py'
+      - 'Modelmaker-repair/app.py'
+      - '.github/workflows/modelmaker-adaptive-tests.yml'
+  push:
+    paths:
+      - 'Modelmaker-repair/adaptive_person.py'
+      - 'Modelmaker-repair/test_adaptive_person.py'
+      - 'Modelmaker-repair/app.py'
+      - '.github/workflows/modelmaker-adaptive-tests.yml'
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check syntax of Modelmaker and adaptive module
+        run: python -m py_compile Modelmaker-repair/app.py Modelmaker-repair/adaptive_person.py
+      - name: Test per-person learning without external dependencies
+        run: python -m unittest discover -s Modelmaker-repair -p 'test_adaptive_person.py' -v
