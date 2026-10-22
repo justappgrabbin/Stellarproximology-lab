@@ -18,6 +18,12 @@ def ask(message:str)->dict:
     """Ask the loaded local model with retrieved passages and Klein analysis."""
     return runtime.respond(message)
 @mcp.tool()
+def install_coding_model()->dict:
+    """Install the pinned public coding weights locally and activate CPU inference."""
+    from assembly.checkpoints import install_coding_checkpoint
+    receipt=install_coding_checkpoint(runtime.directory)
+    return {'checkpoint':receipt,'loaded':runtime.load_model(receipt['path'])}
+@mcp.tool()
 def load_checkpoint(path:str)->dict:
     """Load an explicitly selected local model checkpoint for CPU inference."""
     return runtime.load_model(path)

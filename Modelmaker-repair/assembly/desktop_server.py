@@ -12,6 +12,8 @@ from .runtime import Assembly, KleinBridge, ROOT
 from .coding import CodingWorkspace
 from .intake import read_document
 from . import self_edit
+from .uploads import store_upload,uploads,MAX_UPLOAD
+from .checkpoints import coding_path,install_coding_checkpoint
 import tempfile
 class Turn(BaseModel):
     role:str=Field(pattern='^(user|assistant)$')
@@ -52,7 +54,7 @@ class ComputerHands(KleinBridge):
 
 def create_app(directory=None,mount_training=True):
     data=Path(directory or os.getenv('MODELMAKER_DATA',ROOT/'.modelmaker')).resolve()
-    runtimes={};hands={};lock=threading.RLock();workspace=data/'computer-workspace';workspace.mkdir(parents=True,exist_ok=True)
+    runtimes={};hands={};install_job={'status':'idle'};lock=threading.RLock();workspace=data/'computer-workspace';workspace.mkdir(parents=True,exist_ok=True)
     @asynccontextmanager
     async def lifespan(app):
         yield
@@ -80,6 +82,9 @@ def create_app(directory=None,mount_training=True):
         with lock:
             key=request.state.user
             if key not in runtimes:runtimes[key]=Assembly(data,key)
+            ready=coding_path(data)
+            if not runtimes[key].setting('checkpoint') and (ready/'modelmaker_coding.json').is_file():
+                runtimes[key].setting('checkpoint',str(ready.resolve()))
             return runtimes[key]
     def computer(request):
         with lock:
@@ -106,24 +111,69 @@ def create_app(directory=None,mount_training=True):
     def checkpoint(body:Checkpoint,request:Request):return runtime(request).load_model(body.path)
     @app.post('/api/computer/study')
     def study(body:Source,request:Request):return runtime(request).study(body.text,title=body.title,source='modelmaker-workspace')
+    @app.get('/api/computer/coding/status')
+    def coding_status():return dict(install_job)
+    @app.post('/api/computer/coding/install')
+    def coding_install(request:Request):
+        r=runtime(request)
+        with lock:
+            if install_job.get('status') in ('downloading','loading'):return dict(install_job)
+            install_job.clear();install_job.update(status='downloading',model='Qwen2.5-Coder-0.5B-Instruct')
+        def install():
+            try:
+                receipt=install_coding_checkpoint(data)
+                with lock:install_job.update(status='loading')
+                loaded=r.load_model(receipt['path'])
+                r.event('coding-checkpoint',receipt)
+                with lock:install_job.update(status='ready',path=receipt['path'],loaded=loaded)
+            except Exception as exc:
+                with lock:install_job.update(status='failed',error=str(exc))
+        threading.Thread(target=install,daemon=True).start()
+        return dict(install_job)
+    @app.get('/api/computer/uploads')
+    def upload_list(request:Request):return uploads(runtime(request))
+    def owned_upload(request,item):
+        if len(item)!=32 or any(c not in '0123456789abcdef' for c in item):raise HTTPException(404)
+        import json
+        root=data/'uploads'/request.state.user/item
+        receipt=root/'receipt.json'
+        if not receipt.is_file():raise HTTPException(404)
+        return root,json.loads(receipt.read_text())
+    @app.get('/api/computer/uploads/{item}/original')
+    def original_upload(item:str,request:Request):
+        root,receipt=owned_upload(request,item)
+        return FileResponse(root/'original'/receipt['file'],filename=receipt['file'],media_type='application/octet-stream')
+    @app.get('/api/computer/uploads/{item}/text')
+    def uploaded_text(item:str,name:str,request:Request):
+        root,receipt=owned_upload(request,item)
+        entry=next((row for row in receipt['entries'] if row['path']==name),None)
+        if not entry or entry['status'] not in ('studied','indexed-awaiting-study'):raise HTTPException(400,'File does not have indexed text')
+        project=workspace/request.state.user/'imports'/item if receipt.get('project_path') else root/'original'
+        from .uploads import text_content,safe_member
+        path=(project/str(safe_member(name))).resolve()
+        if not path.is_relative_to(project.resolve()):raise HTTPException(400,'Invalid project path')
+        text=text_content(path)
+        return {'file':name,'text':(text or '')[:100000],'truncated':bool(text and len(text)>100000)}
     @app.post('/api/computer/books')
     async def upload_books(request:Request,files:list[UploadFile]=Upload(...)):
-        receipts=[]
+        if len(files)>32:raise HTTPException(400,'Upload at most 32 files at once')
+        receipts=[];request_bytes=0
         for upload in files:
-            name=Path(upload.filename or 'book.txt').name
+            name=Path(upload.filename or 'upload.bin').name
             try:
-                payload=await upload.read(32*1024*1024+1)
-                if len(payload)>32*1024*1024:raise ValueError('Book exceeds the 32 MB upload limit')
                 with tempfile.TemporaryDirectory() as temporary:
-                    path=Path(temporary)/name;path.write_bytes(payload)
-                    text=read_document(path)
-                # Run synchronous source analysis off the ASGI event loop.
-                from starlette.concurrency import run_in_threadpool
-                result=await run_in_threadpool(runtime(request).study,text,title=name,source='uploaded:'+name)
-                receipts.append({'file':name,'ok':True,'receipt':result})
+                    path=Path(temporary)/'upload';size=0
+                    with path.open('wb') as output:
+                        while chunk:=await upload.read(1024*1024):
+                            size+=len(chunk);request_bytes+=len(chunk)
+                            if size>MAX_UPLOAD or request_bytes>512*1024*1024:raise ValueError('Upload limit: 128 MB per file, 512 MB per batch')
+                            output.write(chunk)
+                    from starlette.concurrency import run_in_threadpool
+                    result=await run_in_threadpool(store_upload,runtime(request),name,path)
+                receipts.append(result)
             except Exception as exc:receipts.append({'file':name,'ok':False,'error':str(exc)})
             finally:await upload.close()
-        return {'books':receipts,'policy':'Source passages remain retrievable; analysis receipts report any unprocessed passages. Uploading is not a weight-training run.'}
+        return {'books':receipts,'policy':'Original files are retained privately. Supported text is indexed and studied. Archives are inspected without execution. Binary storage does not imply semantic understanding or weight training.'}
     @app.get('/api/computer/edit/files')
     def editable_files():
         candidates=[p.relative_to(ROOT).as_posix() for prefix in self_edit.ALLOWED_ROOTS for p in (ROOT/prefix).rglob('*') if p.is_file() and p.suffix in ('.py','.js','.mjs','.html','.css','.md','.txt') and '__pycache__' not in p.parts]

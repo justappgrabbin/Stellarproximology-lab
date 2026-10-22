@@ -49,7 +49,8 @@ class DesktopTests(unittest.TestCase):
         result=self.client.post('/api/computer/chat',json={'message':'river otters shelter'}).json()
         self.assertTrue(any(row['source']=='uploaded:otters.txt' for row in result['evidence']))
         unsupported=self.client.post('/api/computer/books',files=[('files',('image.png',b'not text','image/png'))]).json()
-        self.assertFalse(unsupported['books'][0]['ok'])
+        self.assertTrue(unsupported['books'][0]['ok'])
+        self.assertEqual(unsupported['books'][0]['entries'][0]['status'],'retained-binary')
     def test_workspace_paths_are_restricted(self):
         self.assertEqual(self.client.post('/api/computer/file',json={'name':'../escape.txt','text':'no'}).status_code,400)
         self.assertEqual(self.client.post('/api/computer/file',json={'name':'example.html','text':'<h1>Preview</h1>'}).status_code,200)

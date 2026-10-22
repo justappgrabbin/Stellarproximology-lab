@@ -43,12 +43,25 @@ def propose(runtime,name,replacement,root=ROOT,expected_hash=None):
 def generate(runtime,name,instruction,root=ROOT):
     state=file_state(name,root)
     if not runtime._ensure_model():raise ValueError('Load a model checkpoint before asking it to write code. You can also edit the source manually and preview its diff.')
-    result=runtime.respond('Propose the requested source edit. Return ONLY a JSON object with one key "replacement" containing the complete replacement file.\nRequest: '+instruction+'\nFile: '+name+'\nCurrent source:\n'+state['text'])
-    raw=result['answer'].strip()
+    messages=[{'role':'system','content':'You are a code editor. Return only JSON with an edits array. Each edit has old and new strings. Copy old exactly from the source, with enough context that it occurs once. Do not invent paths or rewrite unrelated code. Example: {"edits":[{"old":"return a - b","new":"return a + b"}]}'},
+        {'role':'user','content':'Requested change: '+instruction+'\nFile: '+name+'\nSource:\n'+state['text']}]
+    result=runtime.generate_text(messages,max_new_tokens=768,truncate=False)
+    raw=result['text'].strip()
     if raw.startswith('```'):raw='\n'.join(raw.splitlines()[1:-1])
-    try:replacement=json.loads(raw)['replacement']
-    except (json.JSONDecodeError,KeyError,TypeError) as exc:
-        raise ValueError('The loaded model did not produce a valid code proposal. No files were changed. A coding-capable checkpoint is required for reliable self-editing.') from exc
+    try:
+        parsed=json.loads(raw)
+        if 'replacement' in parsed:replacement=parsed['replacement']
+        else:
+            edits=parsed['edits']
+            if not isinstance(edits,list) or not 1<=len(edits)<=20:raise ValueError('Need 1..20 edits')
+            replacement=state['text']
+            for edit in edits:
+                old,new=edit['old'],edit['new']
+                if not isinstance(old,str) or not old or not isinstance(new,str) or replacement.count(old)!=1:
+                    raise ValueError('An edit did not match exactly one source fragment')
+                replacement=replacement.replace(old,new,1)
+    except (json.JSONDecodeError,KeyError,TypeError,ValueError) as exc:
+        raise ValueError('The model did not produce a source-matching edit. No files were changed. Try a more specific request or edit the source manually.') from exc
     return propose(runtime,name,replacement,root,expected_hash=state['sha256'])
 
 def apply(runtime,item_id,root=ROOT,run_tests=True):
