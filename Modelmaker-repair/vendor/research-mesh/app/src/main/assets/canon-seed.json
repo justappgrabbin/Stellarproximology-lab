@@ -1,0 +1,68 @@
+{
+  "title": "Synthia Research Mesh Canon Seed",
+  "sources": [
+    {
+      "origin": "Library: On the Architecture of Proportion of Perspective / SPEC-2 Klein Tool",
+      "type": "architecture",
+      "claims": [
+        "Meaning is proportional to position; once a position is evaluated, its reading is fixed to that exact position.",
+        "The operative substrate is one shared structure with knowledge, state, temporal/associative and causal/dependency properties rather than isolated duplicate graphs.",
+        "Klein Tools are context-dependent emergent behavior primitives. Their output is relation, intensity and direction.",
+        "A Klein Tool must not return a context-independent fixed relation.",
+        "Joint evaluation must generate the combined result from co-active context, not by summing individually evaluated outputs.",
+        "The same exact context must resolve deterministically after collapse."
+      ]
+    },
+    {
+      "origin": "Library: Pure Synthia recursive generative state calculus",
+      "type": "runtime",
+      "claims": [
+        "Pure Synthia is a recursively addressed deterministic automata system.",
+        "The same reusable relational operators should be testable across linguistic, semantic, computational and multi-automata scales.",
+        "Every learned or candidate rule carries support, confidence, error and provenance.",
+        "Emergence means a higher-order configuration is generated from registered lower-order states and permitted operators rather than stored as a finished solution."
+      ]
+    },
+    {
+      "origin": "Drive: Intelligent Research Book / AutoNovel design",
+      "type": "research",
+      "claims": [
+        "Research is the primary identity; coding and compilation are supporting research functions.",
+        "Supported research sources include arXiv, PubMed, GitHub, Hugging Face, official documentation, uploaded files, local collections and custom websites.",
+        "AUTOLING, DISEMINER, MESSY, Language Contact Model and AUTONOVEL should operate as coordinated mechanisms over a shared state-space.",
+        "Research integrity requires source material, direct evidence, observations, interpretations, generated explanations, hypotheses, assumptions, contradictions, unresolved questions and verified conclusions to remain distinguishable.",
+        "AUTONOVEL produces extended explanations and structured research narratives from registered evidence and state."
+      ]
+    }
+  ],
+  "dimensions": {
+    "Being": "Who",
+    "Design": "What",
+    "Space": "Where",
+    "Movement": "When",
+    "Evolution": "Why"
+  },
+  "hard_invariants": [
+    "Everything entering Synthia is automatically registered at intake.",
+    "Never silently rename, merge, omit, relocate, simplify or refactor an existing canonical component.",
+    "Unknown architecture is preserved as unresolved, not normalized.",
+    "Evidence and generated interpretation are stored as different object types.",
+    "Klein relations are generated from active context.",
+    "Resolved Klein output is deterministic for the identical context.",
+    "Coder changes are additive proposals until explicitly promoted."
+  ],
+  "automata": [
+    "IntakeRegistrar",
+    "ResearchScout",
+    "EvidenceMiner",
+    "AUTOLING",
+    "DISEMINER",
+    "MESSY",
+    "LanguageContactModel",
+    "KleinResolver",
+    "ConceptMiner",
+    "AutoNovel",
+    "ReportVerifier",
+    "SynthiaCoder"
+  ]
+}

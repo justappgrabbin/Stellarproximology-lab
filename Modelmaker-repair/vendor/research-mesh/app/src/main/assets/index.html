@@ -1,0 +1,102 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Synthia Research Mesh</title>
+<style>
+:root{--bg:#0c0810;--panel:#15101b;--panel2:#201528;--line:#3b2850;--ink:#f4ecff;--muted:#a795b9;--purple:#b77cff;--rose:#e37ca7;--mint:#7de1bb;--amber:#ffd28b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px system-ui,-apple-system,sans-serif}
+header{position:sticky;top:0;z-index:10;background:#0c0810ee;border-bottom:1px solid var(--line);padding:13px 14px}
+h1{font-size:17px;margin:0}.sub{color:var(--muted);font-size:11px;margin-top:3px}
+nav{display:flex;overflow:auto;gap:7px;padding:8px 10px;border-bottom:1px solid #251831;background:#100b15;position:sticky;top:58px;z-index:9}
+nav button,.btn{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:10px;padding:9px 12px;white-space:nowrap}
+nav button.on,.btn.primary{background:#28183a;color:var(--purple);border-color:#684293}
+main{padding:12px;max-width:1000px;margin:auto}.view{display:none}.view.on{display:block}
+.card{background:var(--panel);border:1px solid #2f203d;border-radius:14px;padding:13px;margin-bottom:11px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.grow{flex:1;min-width:180px}
+input,textarea,select{width:100%;background:#0f0a14;border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:11px;font:inherit}
+textarea{min-height:120px;resize:vertical}.label{font-size:11px;color:var(--muted);margin:0 0 6px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:3px 7px;color:var(--muted);font-size:10px;margin:2px}
+.good{color:var(--mint)}.warn{color:var(--amber)}.purple{color:var(--purple)}.rose{color:var(--rose)}
+.source,.node,.report{padding:10px;border:1px solid #332341;border-radius:10px;margin-top:8px;background:#110c17}
+.source b,.node b{font-size:12px}.tiny{font-size:10px;color:var(--muted)}pre{white-space:pre-wrap;word-break:break-word;background:#0c0910;border:1px solid #2b1e38;border-radius:10px;padding:10px;color:#e8dcf7}
+.mesh{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mesh .node{margin:0}
+@media(min-width:720px){.mesh{grid-template-columns:repeat(4,minmax(0,1fr))}}
+footer{color:#786a86;font-size:10px;text-align:center;padding:24px}
+</style></head>
+<body>
+<header><h1>Synthia Research Mesh</h1><div class="sub">registered intake · Klein context mesh · AutoNovel · evidence-first RAG · coder automaton</div></header>
+<nav id="nav"></nav>
+<main>
+<section id="research" class="view on">
+  <div class="card">
+    <div class="label">Research question / build problem</div>
+    <textarea id="question" placeholder="Describe the thing you are building or the question you need investigated."></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" onclick="runResearch()">Research</button>
+      <button class="btn" onclick="googleSearch()">Google</button>
+      <button class="btn" onclick="makeConcepts()">Mine concepts</button>
+      <button class="btn" onclick="makeReport()">AutoNovel report</button>
+    </div>
+  </div>
+  <div id="researchStatus" class="card tiny">Ready. Canon seed is registered locally.</div>
+  <div id="researchResults"></div>
+</section>
+
+<section id="intake" class="view">
+  <div class="card"><b>Automatic intake registry</b><div class="tiny">Everything imported becomes a registered object with origin, type, timestamp, evidence class and relationships.</div></div>
+  <div class="card">
+    <div class="row">
+      <button class="btn primary" onclick="Native.openDrivePicker()">Import from Drive / Android Files</button>
+      <button class="btn" onclick="registerPaste()">Register pasted conversation</button>
+    </div>
+    <textarea id="paste" style="margin-top:9px" placeholder="Paste a ChatGPT conversation, note, source text, specification or code here."></textarea>
+  </div>
+  <div id="registry"></div>
+</section>
+
+<section id="sources" class="view">
+  <div class="card"><b>Research providers</b>
+    <div><span class="pill">arXiv</span><span class="pill">PubMed</span><span class="pill">Google Custom Search (optional)</span><span class="pill">Drive file picker</span><span class="pill">Local registered corpus</span></div>
+  </div>
+  <div id="sourceList"></div>
+</section>
+
+<section id="concepts" class="view">
+  <div class="card"><b>Concept Miner</b><div class="tiny">DISEMINER separates recurring terms/claims; MESSY groups them; KleinResolver derives context-dependent links; AUTOLING gives labels.</div></div>
+  <div id="conceptList"></div>
+</section>
+
+<section id="mesh" class="view">
+  <div class="card"><b>Klein mesh</b><div class="tiny">Edges shown here are witnessed relations generated from co-active context. They are not permanent hard-coded meanings.</div></div>
+  <div id="meshList" class="mesh"></div>
+</section>
+
+<section id="reports" class="view">
+  <div class="card"><b>AutoNovel reports</b><div class="tiny">Narrative is generated from registered evidence while preserving evidence / interpretation / hypothesis boundaries.</div></div>
+  <div id="reportList"></div>
+</section>
+
+<section id="coder" class="view">
+  <div class="card">
+    <b>Synthia Coder Automaton</b><div class="tiny">Produces additive component proposals and code scaffolds. It does not silently rewrite canon.</div>
+    <textarea id="coderPrompt" style="margin-top:9px" placeholder="Example: Build a ResearchScout automaton that searches three providers and emits EvidencePackets."></textarea>
+    <button class="btn primary" style="margin-top:8px" onclick="runCoder()">Build piece</button>
+  </div>
+  <div id="coderOut"></div>
+</section>
+
+<section id="settings" class="view">
+  <div class="card">
+    <b>Optional Google Custom Search</b>
+    <p class="tiny">Direct Google RAG requires a Google Programmable Search API key + engine ID. They stay only on this device.</p>
+    <input id="googleKey" placeholder="Google API key"/>
+    <input id="googleCx" style="margin-top:8px" placeholder="Programmable Search engine ID (cx)"/>
+    <button class="btn" style="margin-top:8px" onclick="saveSettings()">Save locally</button>
+  </div>
+  <div class="card"><b>Model policy</b><div class="tiny">This first build uses the earlier Pure Synthia automata/grammar lineage as the reasoning spine. External LLMs are not required for evidence collection or AutoNovel assembly.</div></div>
+</section>
+</main>
+<footer>Stellar Proximology instrument · Synthia is a product/runtime inside the larger research system</footer>
+<script src="app.js"></script>
+</body></html>

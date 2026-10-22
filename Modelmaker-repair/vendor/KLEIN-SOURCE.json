@@ -1,0 +1,467 @@
+{
+  "repository": "justappgrabbin/Generative-address-system",
+  "revision": "04d0227d98d1104e17c0891812db66c5774181c5",
+  "source": "original execution-spine authority; unchanged source copied before local repairs",
+  "files": [
+    {
+      "path": "vendor/klein/automata/automaton.js",
+      "sha256": "2774b401be3a4c7f563ad853b80928db0e7c75405d70bd50cd562ecc7fd22de8"
+    },
+    {
+      "path": "vendor/klein/automata/registry.js",
+      "sha256": "0d9b18938e52c5dfaa21edb4657583c7e32ad8fdf189c94c7c8f3faeb967a85b"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-01-autoling-lite.js",
+      "sha256": "f1a2d52d4197e69a94f33224f220fae91bc3313c50abb4775090201ecdc04849"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-02-diseminer-lite.js",
+      "sha256": "99d9c898fd073dfce9e455956f0f571595eb675aa6ebed36ac8376683809b45b"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-03-klein-analogy.js",
+      "sha256": "b0c6a89eff5c4f37c4dd8ad65c53a6ad385e2598a2817ad156b8ef5ca9bc050c"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-04-iching-grammar.js",
+      "sha256": "95b36179b77fde7c1b2211487215f8302db3eabef70ac1eca4f699196d5c0d51"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-05-language-contact.js",
+      "sha256": "48b88d208969e78d74cd62e32abda6c0dff65e82b3b1f0c1c225017cd0713c48"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-06-historical-monte-carlo.js",
+      "sha256": "693187d7b6577f27af472346aa44975ff6f78b55dba4aa253e32c2ae1246173b"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-07-autonovel.js",
+      "sha256": "8b568ed4212054661aac9c181c131d5e176ae37955cf78882687d266bce53048"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-08-messy.js",
+      "sha256": "db2204d1f27dff523b3834312376d05c64fe68102be899817bffa7b5dddc771e"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-09-success.js",
+      "sha256": "379735473faf6079a279848d6b2c091f0ae0b1bb0c327e6799a9edfe503b6938"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-10-conversation.js",
+      "sha256": "cfbbccbadd8e47d23098fb185376682891137ca16de8fdde4ebbbd9fe1347005"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-11-browser-form.js",
+      "sha256": "1260410a1618c43a98ca5e8548a4526b09b515cb2838d71ea61ad3d2c0a4e07b"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-12-research-browser.js",
+      "sha256": "0ad36e3dc31085c8e8cc65708a7a1cde73adf8e918d296317d600a010cfd0e5c"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-13-computational-grammar-coder.js",
+      "sha256": "ba23127b008c500c577d5c441ef795fc0329abea664aff264b7c6ef544656a8d"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-14-autoling.js",
+      "sha256": "59cc4c8e62d82c169f6421be9cf047ed921cc3f16e7b8be19798346208d70c1b"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-15-diseminer.js",
+      "sha256": "07d68b825c34a1ca58203d72d81301ef19668a0565401bcd84eed4c50290ec39"
+    },
+    {
+      "path": "vendor/klein/automata/tools/tool-16-morph-mir.js",
+      "sha256": "5f5ef0bfa182d711a00b5815004f5d02a510bf7dab3fb472796bbf94a6981e9a"
+    },
+    {
+      "path": "vendor/klein/emergence/coordination.js",
+      "sha256": "9047f2354fd51ac11534997dc1805872a7ae9f1d0c9366c8826499cd7b7af2b8"
+    },
+    {
+      "path": "vendor/klein/emergence/detector.js",
+      "sha256": "83c7eac76d16b04ebcd010df48c20f18da8d0e65d51b5046a37fdaed391f023a"
+    },
+    {
+      "path": "vendor/klein/emergence/intent-engine.js",
+      "sha256": "8c7d752771ff67701557b0cbf1f73a52ceba443effcd4881d0d8000081166f85"
+    },
+    {
+      "path": "vendor/klein/emergence/self-editor.js",
+      "sha256": "f52e6cd12cd8189efe9bff519669bd2c113375b915266d4de6ea4ca37d82b879"
+    },
+    {
+      "path": "vendor/klein/engine/boolean-ato.js",
+      "sha256": "f28d47124d677398d0bb10fe275a0e185c520cc964d5b7bda6d9a668b63108f9"
+    },
+    {
+      "path": "vendor/klein/engine/canon-registry.js",
+      "sha256": "247b5430250287f264927e28a237bfd9a14bc8d1370abd89957c963818e36157"
+    },
+    {
+      "path": "vendor/klein/engine/derivation.js",
+      "sha256": "db2c139fccfe42964275a91c8289a5d8a1975ebd8ece898fc4df7f826bf9b7b2"
+    },
+    {
+      "path": "vendor/klein/engine/intake.js",
+      "sha256": "d016005011ab198831a4c84e77675ef35d8c848dbf44a23ec21f7418265718ea"
+    },
+    {
+      "path": "vendor/klein/engine/klein-context-runtime.js",
+      "sha256": "666b270c960c3948ff2b59604a7ee9918b2da2f2c5c7092a719e3d0e68dfa5ea"
+    },
+    {
+      "path": "vendor/klein/engine/klein-distributional.js",
+      "sha256": "49e1183d89832d0937966c5268cecbadc40c50c9cd545c6c14cf1f466cb0bb86"
+    },
+    {
+      "path": "vendor/klein/engine/klein.js",
+      "sha256": "2fc06d4e92b1af64411aff8315d4f36e3abfb7674cfc1acd76005a2df1c18e2f"
+    },
+    {
+      "path": "vendor/klein/engine/learning.js",
+      "sha256": "d5654f72c4797e1eaa43897272b66f843f802135a41f4ba95b63b46770c19321"
+    },
+    {
+      "path": "vendor/klein/engine/ledger.js",
+      "sha256": "fc68a6d2308ce75ab419ed8809ad19defd555fcdc73267163fe872dcdcf959ca"
+    },
+    {
+      "path": "vendor/klein/engine/override-registry.js",
+      "sha256": "01df3c2a42ab9b53ad1740d1e11866369b306680aad497a0b33a61566bee93a1"
+    },
+    {
+      "path": "vendor/klein/engine/prediction.js",
+      "sha256": "fe8b43a5a9d94dd84e55c2a0e851e0a785b99b3a6f23bae7a150b479ccf7470b"
+    },
+    {
+      "path": "vendor/klein/engine/questions.js",
+      "sha256": "81050fe98af89467573e059938d79e61fa8370c4658575a0896ff612261336af"
+    },
+    {
+      "path": "vendor/klein/engine/resonance-network.js",
+      "sha256": "998b4446ea8a7da6d1ddc86223c1e4f637b21a339393bd6493c9b115d407c288"
+    },
+    {
+      "path": "vendor/klein/engine/rule-council.js",
+      "sha256": "acb7ad85183b92ddbf6432e98c5829a5aacaffb9f7ae4d191980df15b5d42aa1"
+    },
+    {
+      "path": "vendor/klein/engine/self-correcting.js",
+      "sha256": "3a94f0ee5244e053310ab4abe91db2ee6dfd5eab855b14f90e1b71c1b2b31e4d"
+    },
+    {
+      "path": "vendor/klein/engine/synthai-converter.js",
+      "sha256": "7f8e5eef7039a2eba2c5c5abc91089aa0494b5881a0a6d1b0d5b65c1b59c42cc"
+    },
+    {
+      "path": "vendor/klein/engine/synthia.js",
+      "sha256": "541205e37abc2f89ea86bff81136211d56dff448b1bfdd131b1050fd259dac2e"
+    },
+    {
+      "path": "vendor/klein/engine/triples.js",
+      "sha256": "9739965d4f4a6f3f6f5f6fc5de3e381a192d1d6f01b643bc3873fc36c4acb2e6"
+    },
+    {
+      "path": "vendor/klein/engine/v2/coordinate_engine.js",
+      "sha256": "456625a1c2ed3cd40006818caedb069a5e7b4be74f53a7e0bd06a1d88af18569"
+    },
+    {
+      "path": "vendor/klein/engine/v2/layer5_ssm.js",
+      "sha256": "1de225c70aff6a872af2ef792df2e0144d0f8b6009a32b4ec310bb8be43d8f93"
+    },
+    {
+      "path": "vendor/klein/engine/v2/phase_space_engine.js",
+      "sha256": "01ebc31b749632f33b04b68f2a084497bca7e62fe0b796773f18d34762aa9d8c"
+    },
+    {
+      "path": "vendor/klein/experiments/hypothesis-registry.js",
+      "sha256": "94af8b5acaf7970f3c26c14eb9570e11cb367a29eaba00e23a4c081bcafbad74"
+    },
+    {
+      "path": "vendor/klein/experiments/relational-capability.js",
+      "sha256": "1d84233d0256980159435d75f6bc13d3327f444d1f236b269e7d424b2a65ce80"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/automata-composition.js",
+      "sha256": "80d81d0aeeba2c600c6647a973c1077bd4beabfb2289d508451e90903782bb72"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/controls.js",
+      "sha256": "d77f521e074f784ed44436e192b5b2cf4056d851150f722d2c4d624c588ef543"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/core.js",
+      "sha256": "3540459880a3c31a2a5227ecfee3b25ebaf55fc921551cd3dff9119bc497ddd7"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/cross-scale.js",
+      "sha256": "d27a42b5a4ea30f7993c9e22cfd12c395a34447ac7b31d6dd69fac7af69deca0"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/d1.js",
+      "sha256": "5e1ad933171b0c2e62b3887d8070fa43ed21b6340b8289a4627ac913d611acfb"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/d2.js",
+      "sha256": "900024fe90abc35f1a9b010720d8e655937628995da4879857d7ec4b22956add"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/d3.js",
+      "sha256": "c9888467a710a7aea46034943a8068c1952d93390d23f0c5b9a1bdfd69f32cc5"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/datasets.js",
+      "sha256": "82562d59bd3de8e21247fddc0d71e8f519a50a381d55bfc52a2b64043a0708a6"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/evaluators.js",
+      "sha256": "3a45f758213163d8d20946c4b731d49d5dda73d3158c1e015e9a0d7d4ed45176"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/fsm.js",
+      "sha256": "dd9eb95bf8ca0b1f3870c6f5650b0725897e3965a86f8c55696a78f3606df0f3"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/graph-trace.js",
+      "sha256": "74f5f965e15f2bbe79f6370c6b5d771fd2c12b435ba17f803c12eb5430d07a7f"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/metrics.js",
+      "sha256": "ebfc1e355209ad0424c76adde9cf4012476054b2ed0464d37075c15b20f90443"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/operators.js",
+      "sha256": "89cd2180382defd66e6d9ca65f414ad8692f2756948ed55d16bb0f0466ddc0c1"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/parsers.js",
+      "sha256": "a6d767e3e320560661604034cbd687b314f952253cf72fdc148211bc358f2a1a"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/phase-corpora.js",
+      "sha256": "a1b888d1752926b448439901c4c0505a21885a4d50f0f460044f1c13daae373f"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/reproduce.js",
+      "sha256": "b158923469cb7fe1bec6be16e7b1182cb0df7a69e54cbe0fb4c11cdbacbf5e3d"
+    },
+    {
+      "path": "vendor/klein/experiments/scale/sealed-results.js",
+      "sha256": "25b7d4232aa4cb9adc4221f61460880b690b8333685489203d4f3419df5445d6"
+    },
+    {
+      "path": "vendor/klein/grammar/grammar.js",
+      "sha256": "fdf2b9649474baa0b4716839e2e97be73417333103647d6820c6e9e99dfc2a79"
+    },
+    {
+      "path": "vendor/klein/grammar/parser.js",
+      "sha256": "2a5a82fcb4985ff8e876a5c268ad23c732e9b4218c918c463614fa1e16b14cc7"
+    },
+    {
+      "path": "vendor/klein/grammar/tokens.js",
+      "sha256": "9619af4448c7fe45ea2d682c45cecc7132faa9da29cf950a87eb7366419e33ef"
+    },
+    {
+      "path": "vendor/klein/integration/canonical-address-code.js",
+      "sha256": "53066ff302d9bf7258317ffedc756be49fbf0c182caf63f85da255aca328b9af"
+    },
+    {
+      "path": "vendor/klein/integration/execution-loop-orchestrator.js",
+      "sha256": "74efa1aff0b163924d3abcf044807f84919b92e7f59cf099562c1fd3fcd0c679"
+    },
+    {
+      "path": "vendor/klein/integration/focal-state-space.js",
+      "sha256": "73f36c2369e86498eeabaff9367d3ea55274dc19f5be15e619c40941356949e6"
+    },
+    {
+      "path": "vendor/klein/integration/focal-weight-calculator.js",
+      "sha256": "5f521b5c8d8e61a60f35e49d809dadeac7418cef9367f6cbc12ecec1008944b7"
+    },
+    {
+      "path": "vendor/klein/integration/language-contact-models.js",
+      "sha256": "c2a4702b539cd5093c22f64e0b63118a4daebe19c211457fa6f3801b883760e3"
+    },
+    {
+      "path": "vendor/klein/integration/mesh-rule-synthesizer.js",
+      "sha256": "60de56c06cab4e09cfa65362571478225a2abd54092235e19cee95b9942412e9"
+    },
+    {
+      "path": "vendor/klein/integration/paper-runtime-sandbox.js",
+      "sha256": "82a30b7135707dbf10194c3dbcb51642860dd60c223834521c82758a563893e4"
+    },
+    {
+      "path": "vendor/klein/integration/runtime-adapter-registry.js",
+      "sha256": "d33222fb4d65ec0a9adfdacf94ff2294033d51cc2d260e8a7c57e73481548abc"
+    },
+    {
+      "path": "vendor/klein/integration/storage.js",
+      "sha256": "7ad88cdb7decfc79f44d5a09e04769f595296a71b915816ab5fabb17d46aafcf"
+    },
+    {
+      "path": "vendor/klein/integration/universal-execution-bridge.js",
+      "sha256": "7c27c3e336eae82b42413b706eab9b129e1857b5b7f2d1861116f28701049b79"
+    },
+    {
+      "path": "vendor/klein/merged/artifacts.js",
+      "sha256": "dccdcb8907775a8bbb2ae40b5b546464482e583daef0b88fe8351d56c4bee640"
+    },
+    {
+      "path": "vendor/klein/merged/ato-analogy.js",
+      "sha256": "fae1a8e7ecf239cc341239289f71cdfc2f017dbc12cbcff5bc2799bf1ad7ca9e"
+    },
+    {
+      "path": "vendor/klein/merged/centers-channels.js",
+      "sha256": "fe99c3b84425b7951a453d96fe3bbcc4b34b084a4e4241d1b59f27068c8b060f"
+    },
+    {
+      "path": "vendor/klein/merged/dimension-router.js",
+      "sha256": "f1c4c37fb2916ee677bc27c0aa5e3cf32bd04d2d45b4b1f94bf1119e9a21ab5c"
+    },
+    {
+      "path": "vendor/klein/merged/fuxi-encoder.js",
+      "sha256": "c5294e6b8d454761dcb57e4ed920dafe9e61d32c54ea858d7af642bd748b52a7"
+    },
+    {
+      "path": "vendor/klein/merged/gate-field.js",
+      "sha256": "dc1d8d5594feeb0dd1337dbfbabd3056bcd82ada4122aa15294a20053f33dee3"
+    },
+    {
+      "path": "vendor/klein/merged/index.js",
+      "sha256": "75cf5393d83a15f57a00fd91784a700606256f753cbbc93086c1018c553c0508"
+    },
+    {
+      "path": "vendor/klein/merged/kingwen.js",
+      "sha256": "fdc00068f4098896552da94e17d0c18310d5e940b67ec00d40e049086750de80"
+    },
+    {
+      "path": "vendor/klein/merged/lawful-grammar.js",
+      "sha256": "f0a2901c4c8aace2ad1799ebbceaf1daa9995cb2d7f6e0f969c1f9c2631d2d6d"
+    },
+    {
+      "path": "vendor/klein/merged/media-field.js",
+      "sha256": "180a5bddc9478a741e604a78b95b0a101e289afb39d3b5a8cff7fcda08536627"
+    },
+    {
+      "path": "vendor/klein/merged/mesh-memory.js",
+      "sha256": "a1798bfb8c300eeba86d4573e3c65e48b52bfeb80bc5b2488d2cacb3fc0ef561"
+    },
+    {
+      "path": "vendor/klein/merged/scene-grammar.js",
+      "sha256": "be29cc0e56768226da21feeac41e24d224ecd44d30042ae8c3edba7bc8452af3"
+    },
+    {
+      "path": "vendor/klein/merged/tool-factory.js",
+      "sha256": "e3d981e283e440e2ed7ccda76fcdda12ab9edd3508bc6ff9fe84ce21a7fa12b9"
+    },
+    {
+      "path": "vendor/klein/mesh/channels.js",
+      "sha256": "050a98e43eed041c315c2c8b1d36237eafe9f25dbaec3fe497a6c6434cd0f488"
+    },
+    {
+      "path": "vendor/klein/mesh/mesh.js",
+      "sha256": "2c5d5a73036d4a0f192b2701df10ad6ea78c3a390c052ac9a19419273c1f14ea"
+    },
+    {
+      "path": "vendor/klein/mesh/packet.js",
+      "sha256": "69b1c1410a52edc64bb9a8b7d36aafeaac0e367cf5412befcd9b93952894db68"
+    },
+    {
+      "path": "vendor/klein/organism/living-loop.js",
+      "sha256": "203eb63ef5c87e93ed979e007727ff030728f914d8c76f6d26e775051a811096"
+    },
+    {
+      "path": "vendor/klein/organism/vitals.js",
+      "sha256": "4fe2bc9be75a29076bf01bc37661db908b9f4c27d0b34eb10c3162700ca76fbb"
+    },
+    {
+      "path": "vendor/klein/sovereign-entry.js",
+      "sha256": "6f171d6fda3e9c6ee96575f1bc77e512b63cee9009ae041bc301be9d25d7ec2e"
+    },
+    {
+      "path": "vendor/klein/state-space/addressing.js",
+      "sha256": "b261e1eef9ae3a1801b558c0bbea384e4b64e146dd90186a39a5661bd97dbfcd"
+    },
+    {
+      "path": "vendor/klein/state-space/chains.js",
+      "sha256": "e27438548be815d5cba6774fdd5faa25cc638a3eaac74359ef6bae805acff8a8"
+    },
+    {
+      "path": "vendor/klein/state-space/claim-status.js",
+      "sha256": "b43718f0c3c59a8e23020e8682b9488b309ae3b889df8059e151858da3ccf55d"
+    },
+    {
+      "path": "vendor/klein/state-space/colors.js",
+      "sha256": "9f63314cce54f5d1dacebe596025449db4225795e74b26a9c3854ea1b8527699"
+    },
+    {
+      "path": "vendor/klein/state-space/constants.js",
+      "sha256": "46ceb941c778e9576adcf44c786f35bbb7822bd1138a40629c7e1b48aca4da6f"
+    },
+    {
+      "path": "vendor/klein/state-space/correspondences.js",
+      "sha256": "2283bec8de178a68f5df5d5a20b9da83a300397f3534962323f8f6d7e1fd385e"
+    },
+    {
+      "path": "vendor/klein/state-space/dimension-canon.js",
+      "sha256": "5dc383caf44392ad71b1c706b3f5b7ef175f64ce99b5e1dba908487559f46229"
+    },
+    {
+      "path": "vendor/klein/state-space/dimensions.js",
+      "sha256": "6c341bdf8d836b6074e348629e7d872f9d33b7b00c33725c85a1b6dfc30f4ec3"
+    },
+    {
+      "path": "vendor/klein/state-space/features.js",
+      "sha256": "fd567fef916d85a3d386dc0b495814ca063ff04d2b7ba84293f7a8250174de56"
+    },
+    {
+      "path": "vendor/klein/state-space/fragments.js",
+      "sha256": "27ad035c6ec7e4997c70dde94e9d8aa8fc51b9945f59df56270486f4876f6456"
+    },
+    {
+      "path": "vendor/klein/state-space/generative-grammar.js",
+      "sha256": "1ea64f30f77a2f9eb91bf7b314681b0bec3d9f9c17fede0124458a94863472d2"
+    },
+    {
+      "path": "vendor/klein/state-space/govinda-structure.js",
+      "sha256": "4cfdac9be1ae3009b666792b5e0ed34972fde4a02feb613540393eaed93719db"
+    },
+    {
+      "path": "vendor/klein/state-space/human-design.js",
+      "sha256": "cccab78ce5c19883810f9e6bc70dd15b2eda78e28a70186e425959b81b869c45"
+    },
+    {
+      "path": "vendor/klein/state-space/letters.js",
+      "sha256": "1afec15e83a22425ec03cd0fae479c0a708f3e781618a6b7fbd4e696cbaca8ac"
+    },
+    {
+      "path": "vendor/klein/state-space/lexicon.js",
+      "sha256": "29e5987c51e4b441af24a662cecd09cf49213c69a5c7475b707988a8ef869fc1"
+    },
+    {
+      "path": "vendor/klein/state-space/mesh-state-space.js",
+      "sha256": "51ade2b7a37dd9594b65fab4d4f6642001f6a8c4f3a9b1a5176d0a46b11c991e"
+    },
+    {
+      "path": "vendor/klein/state-space/operators.js",
+      "sha256": "11ee49ca1792a7fa7ead1d2704cd29a643684208db246230d061da26f6a14045"
+    },
+    {
+      "path": "vendor/klein/state-space/primitive-dimensions.js",
+      "sha256": "7a03a5dc30ffd8580aad45a9575508495b370ed5db6f1dbe6eec59c3f1241d6e"
+    },
+    {
+      "path": "vendor/klein/state-space/sounds.js",
+      "sha256": "6581f703a709255b3b9b10832e0f67807b11030a67c637e6a71678c96ffdb0bd"
+    },
+    {
+      "path": "vendor/klein/state-space/transitions.js",
+      "sha256": "56e1b5b3487437b13878dd896e99a293982ccb33b7938722360e7e13f88ad3ea"
+    },
+    {
+      "path": "vendor/klein/state-space/wen-wang-gua.js",
+      "sha256": "4bdd09968884a3d4f67fe5a2e58716de974d7de020f7144c799f57899d18287d"
+    }
+  ]
+}
