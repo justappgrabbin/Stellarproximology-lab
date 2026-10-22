@@ -1,0 +1,71 @@
+{
+  "scope": "Backend adapters only; no donor interface or state-space architecture imported",
+  "donors": [
+    {
+      "repository": "justappgrabbin/SynthAi",
+      "branch": "hover/synthia58-2026-09-27",
+      "commit": "d901b3e15aa7c99a32fbb15e9b0680d77243249b",
+      "prefix": "computer/donors/synthia58/Synthia-Solo-Hover-v0.5.8/"
+    },
+    {
+      "repository": "justappgrabbin/Synthai2",
+      "branch": "build/embedded-linux-birth-candidate",
+      "commit": "7b28f9e70c9e400e4f50f402dc8766d47ea8a18e",
+      "file": "server/lib/linuxContainerService.ts"
+    }
+  ],
+  "files": [
+    {
+      "file": "linuxContainerService.ts",
+      "sha256": "6cf06aaff23f97402b2f7cf8b4ddc6081568c86f786e14fda067e6f8d889d160"
+    },
+    {
+      "file": "package.json",
+      "sha256": "89c47db7851f89caec72da4f215ebc21cf1e294aeef3b45d2583562d846ab035"
+    },
+    {
+      "file": "src/solo/android-hand-adapter.mjs",
+      "sha256": "d7d88064f26da4d2f87cd295ab58ef6bb581a041230e50563e385510eaa0bdbc"
+    },
+    {
+      "file": "src/solo/browser-hand-adapter.mjs",
+      "sha256": "3ac01f5154b22f3828d669a2074363b6335b3822d1b36fedf412ec7db0638e3c"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/UPGRADES/vendor/ato-core/src/activation.mjs",
+      "sha256": "a4d5237d820e9b5d754f531e348394af2e6b8b0e7f5196a5fd38f2bead372219"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/UPGRADES/vendor/ato-core/src/address-space.mjs",
+      "sha256": "112504b2174240ab545fdab7243d62e60b7c9477f39a406919bd443dc9eee1dd"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/UPGRADES/vendor/ato-core/src/automaton.mjs",
+      "sha256": "6bea009b52bbad0d6ae37c38e0218aac3b226c47f74e37c11fa8995a5a34bdb5"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/UPGRADES/vendor/ato-core/src/boolean-ato.mjs",
+      "sha256": "ac47508bf355be809dfb3ce87eaa463527371f70da9ba9f410aefe3500d567e4"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/UPGRADES/vendor/ato-core/src/browser-form.mjs",
+      "sha256": "adb66eebd7cb3948f94bfd07f833ddb1833d37a9d232e659616da0cdb31c5dff"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/runtime/BrowserTaskMemory.js",
+      "sha256": "6c30f2ca831c824e4dd4d6a99763e21c2f97069eb9b74b2174376a5543dc887c"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/runtime/BrowserTaskPlanner.js",
+      "sha256": "8c1b2734167ec1b234e4fb55353d6783a0d931b332576efaf5446b98736af550"
+    },
+    {
+      "file": "vendor/synthia-browser-continuation-v0.6.8/src/runtime/ChromeDevToolsBrowserExecutor.js",
+      "sha256": "5928787316668c8a4cd378dc095ac05f8acf57178090a0a1eccca421b6594373"
+    },
+    {
+      "file": "vendor/synthia-codex-provider-runtime-v0.1.1/synthia-codex-provider-runtime/src/mcp-tool-broker.mjs",
+      "sha256": "8729ebf44eb13f4123276c5f4465620725b67e4c17e0620eb13ead6d4ddd630f"
+    }
+  ]
+}

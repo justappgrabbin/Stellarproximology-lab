@@ -1,6 +1,9 @@
-gradio>=5.0,<7
+gradio>=5.50,<6
 huggingface_hub>=0.28
 safetensors>=0.4
 tokenizers>=0.20
 torch>=2.2
 transformers>=4.46,<5
+pypdf>=5,<7
+mcp>=1.10,<2
+uvicorn>=0.30,<1
