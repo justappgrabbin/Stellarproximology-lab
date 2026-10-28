@@ -1,0 +1,49 @@
+name: Modelmaker trained weights -> Synthia local inference
+
+on:
+  push:
+    branches:
+      - integration/modelmaker-synthia-local-inference-20261027
+    paths:
+      - 'Modelmaker-repair/app.py'
+      - 'Modelmaker-repair/synthia_server.py'
+      - 'Modelmaker-repair/tests/**'
+      - '.github/workflows/modelmaker-synthia-inference.yml'
+  pull_request:
+    paths:
+      - 'Modelmaker-repair/app.py'
+      - 'Modelmaker-repair/synthia_server.py'
+      - 'Modelmaker-repair/tests/**'
+      - '.github/workflows/modelmaker-synthia-inference.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test real loopback HTTP contract, safe checkpoint path, and model selection
+        run: python -m unittest discover -s Modelmaker-repair/tests -p 'test_synthia_server.py' -v
+
+  real-weights:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU inference and training packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'transformers>=4.46,<5' 'gradio>=5,<7' 'tokenizers>=0.20' 'safetensors>=0.4' 'huggingface_hub>=0.28'
+      - name: Build actual trained toy weights, reload from safetensors, generate tokens
+        run: python -m unittest discover -s Modelmaker-repair/tests -p 'test_training_to_synthia.py' -v
