@@ -46,4 +46,13 @@ jobs:
           python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
           python -m pip install 'transformers>=4.46,<5' 'gradio>=5,<7' 'tokenizers>=0.20' 'safetensors>=0.4' 'huggingface_hub>=0.28'
       - name: Build actual trained toy weights, reload from safetensors, generate tokens
+        env:
+          SYNTHIA_SMOKE_OUTPUT: ${{ github.workspace }}/artifacts/synthia-smoke.zip
         run: python -m unittest discover -s Modelmaker-repair/tests -p 'test_training_to_synthia.py' -v
+      - name: Upload synthetic trained checkpoint for manual Synthia trial
+        uses: actions/upload-artifact@v4
+        with:
+          name: modelmaker-synthia-synthetic-checkpoint
+          path: artifacts/synthia-smoke.zip
+          retention-days: 14
+          if-no-files-found: error
