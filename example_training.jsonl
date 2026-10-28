@@ -1,0 +1,5 @@
+{"prompt":"What does a word mean in context?","response":"A word gains meaning through its relations, grammar, and the situation in which it is used.","relations":[{"subject":"word","relation":"gains-meaning-through","object":"context","verified":false}],"style":"explanatory"}
+{"prompt":"How do roots support a tree?","response":"Roots anchor the tree and carry water and minerals from the soil.","relations":[{"subject":"roots","relation":"support","object":"tree","verified":false}]}
+{"prompt":"Who can create a story?","response":"A person can create a story by connecting actions, characters, and consequences.","style":"clear"}
+{"prompt":"Explain noun class agreement","response":"In many Bantu languages, a noun class controls agreement markers on related words; the patterns differ between languages.","morphology":[{"noun_class":1,"concord":"u"}]}
+{"prompt":"How does context change expression?","response":"The same idea may be expressed differently when the observer, audience, and purpose change.","style":"explanatory"}
