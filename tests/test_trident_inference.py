@@ -4,7 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from trident_inference import load_model, parse_request
+from trident_inference import load_model, parse_request, handler_for
+from http.server import ThreadingHTTPServer
+from threading import Thread
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 
 class TestTridentInference(unittest.TestCase):
@@ -32,6 +36,34 @@ class TestTridentInference(unittest.TestCase):
                 self.assertEqual(model.steps,1)
                 self.assertIn(receipt['revision'],name)
                 self.assertGreater(model.model.param_count(),1000)
+                server=ThreadingHTTPServer(('127.0.0.1',0),handler_for(model,name))
+                server.daemon_threads=True
+                worker=Thread(target=server.serve_forever,daemon=True)
+                worker.start()
+                url=f'http://127.0.0.1:{server.server_port}'
+                try:
+                    with urlopen(url+'/health',timeout=5) as response:
+                        health=json.loads(response.read())
+                        self.assertTrue(health['checkpoint_loaded'])
+                        self.assertFalse(health['production_ready'])
+                    payload={'model':name,'messages':[{'role':'user','content':'Context?'}],
+                             'max_tokens':4,'head':'research','seed':7}
+                    request=Request(url+'/v1/chat/completions',data=json.dumps(payload).encode(),
+                                    headers={'Content-Type':'application/json'},method='POST')
+                    with urlopen(request,timeout=20) as response:
+                        result=json.loads(response.read())
+                        self.assertEqual(result['model'],name)
+                        self.assertEqual(result['metadata']['architecture'],'synthia-relational-trident')
+                        self.assertEqual(result['metadata']['optimizer_steps'],1)
+                    bad={**payload,'model':'wrong'}
+                    request=Request(url+'/v1/chat/completions',data=json.dumps(bad).encode(),
+                                    headers={'Content-Type':'application/json'},method='POST')
+                    with self.assertRaises(HTTPError) as error:urlopen(request,timeout=5)
+                    self.assertEqual(error.exception.code,400)
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    worker.join(timeout=2)
             finally:
                 training_core.ROOT=old
 
