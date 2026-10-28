@@ -196,11 +196,14 @@ def train_model(
                 idx = permutation[start : start + int(batch_size)]
                 batch = sequences[idx].to(device)
                 x = batch[:, :-1]
-                y = batch[:, 1:]
 
                 optimizer.zero_grad(set_to_none=True)
-                out = model(input_ids=x, labels=y)
+                # GPT2LMHeadModel shifts labels internally. Feeding pre-shifted
+                # targets (batch[:, 1:]) taught it to predict two steps ahead.
+                out = model(input_ids=x, labels=x)
                 loss = out.loss
+                if not torch.isfinite(loss):
+                    raise ValueError('Nonfinite training loss; inspect data and learning rate.')
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
