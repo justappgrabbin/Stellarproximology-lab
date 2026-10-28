@@ -1,0 +1,63 @@
+name: Native TRIDENT smoke training and checkpoint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'training_core.py'
+      - 'trident_inference.py'
+      - 'source/**'
+      - 'example_training.jsonl'
+      - '.github/workflows/native-trident-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  training-checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: Train genuine TRIDENT weights, reload them, and export smoke artifact
+        env:
+          MODELMAKER_WORKSPACE: ${{ github.workspace }}/artifacts/workspace
+        run: |
+          python - <<'PY'
+          import json
+          import shutil
+          from pathlib import Path
+          from training_core import train_uploaded, model_status, checkpoint_bundle
+          from trident_inference import load_model
+
+          variant='Portable · 260-byte vocabulary'
+          receipt=train_uploaded('example_training.jsonl',None,variant,32,True)
+          assert receipt['trained'] and receipt['steps']==32
+          status=model_status()
+          assert status['optimizer_steps']==32
+          model,model_id=load_model(Path('artifacts/workspace'))
+          assert model.steps==32
+          result=model.generate('How does context change meaning?',head='research',max_new_bytes=8,seed=13)
+          assert result['ready'] and result['neuralSteps']==32
+          destination=Path('artifacts/trident-native-smoke.zip')
+          shutil.copy2(checkpoint_bundle(),destination)
+          print(json.dumps({
+              'model':model_id,'steps':model.steps,'parameter_count':model.model.param_count(),
+              'zip_bytes':destination.stat().st_size,'checkpoint_reload':True,
+              'purpose':'architecture/inference smoke check only',
+              'production_ready':False
+          },indent=2))
+          PY
+      - name: Retain trained checkpoint for independent inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: trident-native-smoke-not-production
+          path: artifacts/trident-native-smoke.zip
+          retention-days: 14
+          if-no-files-found: error
