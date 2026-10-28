@@ -5,6 +5,8 @@ tiny corpus and deliberately does NOT measure useful dialogue quality.
 """
 import importlib.util
 import json
+import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -28,6 +30,12 @@ class ActualWeightsTest(unittest.TestCase):
                 "synthia-smoke", sample, [], 256, 32, 1, 2, 32,
                 1, 4, 0.001, False, progress=lambda *_args, **_kwargs: None)
             self.assertIsNotNone(archive, message)
+            # Optional CI output is a deliberately tiny SYNTHETIC checkpoint,
+            # never a user checkpoint or production intelligence.
+            if os.getenv('SYNTHIA_SMOKE_OUTPUT'):
+                output = Path(os.environ['SYNTHIA_SMOKE_OUTPUT']).resolve()
+                output.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(archive, output)
             with zipfile.ZipFile(archive) as source:
                 self.assertIn("model.safetensors", source.namelist())
                 source.extractall(Path(folder) / "synthia-smoke")
