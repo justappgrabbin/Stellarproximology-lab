@@ -54,3 +54,13 @@ Hosted operations require the authenticated Hugging Face owner `stellarproximolo
 - **Delivery to Hugging Face:** requires a separate authorized publish/deploy action; no token or private material should be committed to GitHub.
 
 The old `Modelmaker-repair/` folder contains a separate GPT-2-style builder and is intentionally not executed by this root application.
+
+## Serving exported TRIDENT weights to a local Synthia client
+
+After training and exporting a checkpoint, unpack the ZIP and execute:
+
+```bash
+python trident_inference.py --model-dir ./trident --port 11735
+```
+
+The loopback-only endpoint `http://127.0.0.1:11735/v1/chat/completions` uses the **actual native TRIDENT architecture** and can be selected by an OpenAI-compatible local client using the model identifier shown at startup. `GET /health` reports whether real weights were loaded; `production_ready` stays false until independent task evaluations establish it. This is not the GPT-2 `Modelmaker-repair/synthia_server.py` from an older integration branch, and those two checkpoint formats are **not interchangeable**. The client must explicitly select the configured local model endpoint; deploying the trainer does not silently change Synthia's inference model.
