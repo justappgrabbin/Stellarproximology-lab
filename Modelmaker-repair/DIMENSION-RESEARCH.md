@@ -1,56 +1,89 @@
-# Dimension-assigned research team — existing Modelmaker Assembly
+# Modelmaker — shared-source, comparative Klein research positions
 
-This is a backend feature inside the existing `Modelmaker-repair/assembly` private runtime on the `feature/dimension-source-research-team` branch. It does **not** replace the main Trident trainer or change the user's architecture.
+This is an extension to the **existing Modelmaker** on the GitHub branch `feature/dimension-source-research-team`. It does not replace the user's native TRIDENT model, the retained Klein automata or the official computer. It is an isolated draft, not a production deployment.
 
-## Assignment contract
+## Contract: one corpus, four independently situated positions
 
-Four user-defined research positions: **Movement, Evolution, Being, Design**. They gather source information, not primitives, verdicts, predictions, or dimensional scores. Space is not silently assigned as a fifth researcher.
+- **Movement**, **Evolution**, **Being**, and **Design** are positions in the same source field, not four partitions of the library.
+- Every one receives **exactly the same indexed document collection** from the current private Modelmaker user profile, including new documents added later.
+- Every position keeps a separate tool state, source-reading receipts and model checkpoint reference. No source-level labels or primitive vocabulary are assigned in advance.
+- Each position investigates the whole source through its own lens. Researchers collect information, nuance, relationships, examples, disagreements, questions and boundaries. No primitive-extraction goal is imposed.
+- A later comparison preserves their separately grounded observations, including divergence. Quote overlap alone is **not** proof of equivalent interpretation.
+- Space is not invented as a fifth assigned position.
 
-Each model must be given, by the owner:
-- Its named dimension and research scope/instructions.
-- Its **existing local checkpoint directory**.
-- The exact `document_ids` of the particular sources assigned to it.
+## Integrations already in this branch
 
-`configure` refuses missing or invented checkpoints, sources, or instructions. It refuses documents from another profile. Assignments may overlap in sources only when explicitly supplied.
+The existing `Assembly` provides owner-scoped SQLite documents and source text. The existing `KleinBridge` invokes the **preserved Klein automata** (including AUTOLING and DISEMINER) under a distinct deterministic per-position state key. `DimensionResearch` adds a shared-source registry, independent research receipts, source coverage tracking and cross-position comparison. Its `observe_klein` path uses actual Klein tools; its `run` path invokes an explicitly loaded local **compatible** language-model checkpoint. These are separate operations with separate receipts.
 
-## Required research behavior
+The comparison works on exact document IDs and character ranges. Each position can be incomplete; failures and unprocessed passages remain visible. Native Klein analysis receipts are **not** proof of complete semantic extraction. A source may be fully traversed with information still missing.
 
-Read the full stored text of each assigned source in passage order, without keyword-search substitution. For each passage, collect terminology, claims, relationships, examples, mechanisms, counterexamples, nuances, cross-references, ambiguities, and open questions. Preserve verifiable short exact quotations, source title/reference, original character offsets, raw candidate output, and failed attempts. Do not declare unsupported correspondences.
+## The three October 30 user-supplied ZIP references
 
-An observation is recorded as source-anchored only if its quotation occurs verbatim in the supplied passage. Invalid JSON, invented quotations, and unavailable checkpoints remain `needs_review` and do not count toward passage traversal.
+| Source | Verified contents | Contribution without replacing user architecture |
+|---|---|---|
+| `train-llm-from-scratch-main.zip` | PyTorch training, classic/modern Transformers, LoRA, next-token/SFT losses, model checkpoints, preference training, evaluations | Engineering reference for training/benchmark implementation; not imported as a replacement for the owner's TRIDENT |
+| `Smart-File-Organizer-main.zip` | Tkinter folder watcher, configurable keyword rules, file-extension sorting, `shutil.move` | Use only source monitoring and non-destructive routing ideas; do not automatically move original research files |
+| `bazi-profile-main.zip` | Calculation engine, structural signatures, pairwise differentiation, anti-generic linting | Use evidence/interpretation separation and comparison checks as *patterns*; no unsupported BaZi↔Klein correspondences are asserted |
 
-**A source can be traversed without every fact having been captured.** `traversal_complete` means that all indexed source passages have at least one anchored research note, **not** that semantic exhaustiveness or theoretical truth has been established. Verify depth separately by auditing the exported notes against the full source. No source material is approved as neural training targets by this process.
+The ZIP contents were inspected for design. No third-party package was copied into the model, and none is silently executed or installed.
 
-## Use it
+## Setup and running
 
-Run from `Modelmaker-repair` with the dependencies already required by the private Modelmaker assembly:
+After importing supported text/PDF/DOCX material into the existing private Modelmaker source store:
 
 ```bash
+cd Modelmaker-repair
 python -m assembly.dimension_research sources
-python -m assembly.dimension_research configure --manifest /path/to/owner-approved-assignments.json
+```
+
+Configure **positions**, never per-position document lists. Example manifest format (replace position instructions with the owner's real intended comparison lenses; no checkpoints need to be invented at setup):
+
+```json
+{
+  "positions": [
+    {"dimension":"Movement","checkpoint":null},
+    {"dimension":"Evolution","checkpoint":null},
+    {"dimension":"Being","checkpoint":null},
+    {"dimension":"Design","checkpoint":null}
+  ]
+}
+```
+
+```bash
+python -m assembly.dimension_research configure --manifest /path/to/positions.json
+python -m assembly.dimension_research klein --dimension Movement --max-passages 5
+python -m assembly.dimension_research klein --dimension Evolution --max-passages 5
+python -m assembly.dimension_research klein --dimension Being --max-passages 5
+python -m assembly.dimension_research klein --dimension Design --max-passages 5
+python -m assembly.dimension_research compare
 python -m assembly.dimension_research status
+```
+
+Re-running an unchanged configuration preserves prior observations. New text documents become available to all four. If a position's checkpoint or owner-specified instructions change, that position's old research receipts are invalidated and a different Klein state key is used.
+
+For **neural** research, separately provide that position's actual compatible local Transformers/safetensors checkpoint in the manifest, then:
+
+```bash
 python -m assembly.dimension_research run --dimension Movement --max-passages 5
 python -m assembly.dimension_research export --dimension Movement
 ```
 
-The manifest is JSON with one top-level `assignments` array containing exactly four records. Each record must supply `dimension`, `checkpoint`, `document_ids` (array), and `instructions`. The real assigned source list and real checkpoints are deliberately required instead of invented sample IDs.
+A `checkpoint:null` position can do Klein native analysis but **cannot** claim a neural-trained researcher. There is no hidden training step. The root native TRIDENT checkpoint format is *not* interchangeable with the branch's Transformers inference loader: a separate adapter and verified actual training remain necessary.
 
-The private local FastAPI application also exposes these routes:
+## Private API in existing Modelmaker
+
 - `GET /api/computer/research-team/sources`
+- `POST /api/computer/research-team/configure` with the manifest body containing `positions`
+- `POST /api/computer/research-team/klein` with `dimension`, `max_passages`
+- `POST /api/computer/research-team/run` with `dimension`, `max_passages` (requires compatible checkpoint)
 - `GET /api/computer/research-team/status`
-- `POST /api/computer/research-team/configure` with the manifest JSON body
-- `POST /api/computer/research-team/run` with a JSON object containing `dimension` and `max_passages`
+- `GET /api/computer/research-team/compare` (optional `document_id`)
 - `GET /api/computer/research-team/export/{dimension}`
 
-No auto-run, scheduled process, internet publication, remote inference, or Hugging Face deployment is performed by this branch.
+The private app is **not** automatically deployed to Hugging Face. The ZIP references themselves are not a substitute for user-selected research corpora. Imported unreadable/scanned/binary material is not considered complete; the existing upload layer reports its actual extraction limits.
 
-## What is already wired and what is not
+## Evidence and verification
 
-- Existing document store: `Assembly.documents` in the local Modelmaker SQLite database. Use the existing private upload interface to index supported PDF/DOCX/text first.
-- Existing inference interface: `Assembly.load_model` + `Assembly.generate_text`, currently compatible with its local Transformers/safetensors checkpoints. The main Trident `NeuralMaker` checkpoint format is **different** and is not silently accepted here.
-- Source coverage: the new runner traverses all stored source text, even though the older upload `study` path may analyze only its first 16 passages.
-- Unsupported/scanned/binary source content must be separately surfaced for extraction and cannot be counted as read. The source store only contains text successfully extracted by the original upload process.
-- Team research can be checked by `python -m unittest discover -s tests -p test_dimension_research.py -v`. Tests use simulated research output; **they do not establish that four real trained research models exist or have already read the user's books**.
-- Four individual dimension checkpoint assignments and a particular approved source manifest are still needed before a real research run can start.
+Run `python -m unittest discover -s tests -p test_dimension_research.py -v`. Tests cover same corpus delivered to each position, separate position state keys, incomplete receipts, source isolation, dynamic source arrival, and invalid quote rejection. A passing unit test does not establish that the user's actual model weights are trained or that substantive research has finished.
 
-The work remains isolated on this feature branch pending integration review. The source repository and official Modelmaker Space have not been overwritten.
+The collection-to-research-to-model-training connection remains a verifiable future step: detailed annotations from an actually trained model or owner-approved outputs could be used as structured supervised material **after review**, not silently installed as facts or trained weights.
