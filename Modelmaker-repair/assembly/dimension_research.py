@@ -247,8 +247,18 @@ class DimensionResearch:
                 outputs = output.get('outputs') if isinstance(output,dict) else None
                 if not isinstance(outputs,list) or not outputs:
                     raise ValueError('Existing Klein tool pipeline did not return an analysis receipt')
-                if any(not x.get('accepted') for x in outputs if isinstance(x,dict)):
-                    raise ValueError('Klein study contains rejected tool evaluations')
+                if any(not isinstance(x,dict) or x.get('accepted') is not True for x in outputs):
+                    raise ValueError('Klein study contains rejected or malformed tool evaluations')
+                if tool_runner is None:
+                    # Position semantics come from the preserved native Klein
+                    # dimension projection, not a hardcoded prompt vocabulary.
+                    projected = self.runtime.bridge.request(
+                        'project',user=position_key,dimension=dimension,
+                        sourceIdentity=f"{a['document_id']}:{start}-{end}",
+                        sourceHash=_hash(passage))
+                    if projected.get('position') != dimension or not projected.get('projection'):
+                        raise ValueError('Klein dimension projection did not match the assigned position')
+                    output['position_projection'] = projected
                 state = 'processed'
             except Exception as exc:
                 error = str(exc)
