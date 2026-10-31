@@ -76,6 +76,8 @@ class TeamDeliveryInput(BaseModel):
     proof:dict
 class TeamAckInput(BaseModel):
     through_id:int=Field(ge=0)
+class TeamAcceptanceInput(BaseModel):
+    approved:bool
 
 class Source(BaseModel):
     text:str=Field(min_length=1,max_length=192000)
@@ -272,6 +274,9 @@ def create_app(directory=None,mount_training=True):
     @app.post('/api/computer/team/projects/{project_id}/deliver')
     def team_deliver(project_id:str,body:TeamDeliveryInput,request:Request):
         return team(request).complete_project(project_id,body.actor,body.proof)
+    @app.post('/api/computer/team/projects/{project_id}/accept')
+    def team_accept(project_id:str,body:TeamAcceptanceInput,request:Request):
+        return team(request).accept_project(project_id,body.approved)
     # The research team is a backend extension of this EXISTING Modelmaker, not
     # an independent agent stack. Assignments are owner supplied; no source is
     # silently selected and work never starts without an explicit request.
@@ -324,9 +329,13 @@ def create_app(directory=None,mount_training=True):
         return native_positions(request,base_checkpoint).status()
     @app.post('/api/computer/research-team/trident/train')
     def positional_train(body:PositionalTrain,request:Request):
-        return native_positions(request,body.base_checkpoint).train(
+        from .team_control import TeamControl
+        r=runtime(request)
+        result=native_positions(request,body.base_checkpoint).train(
             body.dimension,body.examples,body.heldout,
             steps=body.steps,lr=body.learning_rate)
+        TeamControl(r).record_adapter_training(result)
+        return result
     @app.post('/api/computer/research-team/trident/generate')
     def positional_generate(body:PositionalInfer,request:Request):
         return native_positions(request,body.base_checkpoint).generate(
