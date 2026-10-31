@@ -119,6 +119,7 @@ function renderProjects(projects) {
   }
   for (const p of projects) {
     const article = node('article', '', 'team-project');
+    article.id = 'team-project-' + p.id;
     article.append(node('h3', p.title));
     article.append(node('p', 'Lead: ' + p.lead + ' · Status: ' + p.status));
     article.append(node('p', 'Objective: ' + p.objective));
@@ -202,14 +203,16 @@ async function notifyNewEvents(fresh) {
     if (event.kind === 'assignment' || event.kind === 'delegation') continue;
     try {
       const title = 'Modelmaker: ' + event.title;
-      const options = {body:event.detail, tag:'modelmaker-team-' + event.id};
+      const options = {body:event.detail, tag:'modelmaker-team-' + event.id,
+        data:{projectId:event.project_id ?? null}};
       const service = await getNotificationRegistration();
       if (service) {
         // Android Chromium requires registration.showNotification, not new Notification().
         await service.showNotification(title, options);
       } else {
         const notice = new Notification(title, options);
-        notice.onclick = () => {window.focus(); byId('team-board-tab').click(); notice.close();};
+        notice.onclick = () => {window.location.href = '/?team=1' +
+          (event.project_id ? '&project_id=' + encodeURIComponent(event.project_id) : ''); notice.close();};
       }
     } catch (error) {
       message('Notification saved to inbox, but OS alert could not display: ' + error.message, true);
@@ -230,6 +233,9 @@ async function reload() {
     if (initialized) await notifyNewEvents(recent.notifications);
     notificationCursor = recent.latest;
     initialized = true;
+    const target = new URLSearchParams(window.location.search).get('project_id');
+    const section = target ? byId('team-project-' + target) : null;
+    if (section && !byId('team-board').hidden) section.scrollIntoView({block:'start',behavior:'smooth'});
     message('Synced with local Modelmaker. Worker execution: ' + state.worker_execution.replaceAll('_', ' ') + '.');
   } catch (err) {
     message('Not connected: ' + err.message, true);
@@ -295,4 +301,8 @@ byId('team-ack').onclick = async () => {
 window.addEventListener('modelmaker-team-open', reload);
 document.addEventListener('visibilitychange',() => {if (!document.hidden) reload();});
 refreshTimer = window.setInterval(reload, 8000);
-reload();
+if (new URLSearchParams(window.location.search).get('team') === '1') {
+  byId('team-board-tab').click();
+} else {
+  reload();
+}
