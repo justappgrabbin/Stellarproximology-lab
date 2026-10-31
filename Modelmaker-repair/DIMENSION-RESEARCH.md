@@ -15,6 +15,8 @@ This is an extension to the **existing Modelmaker** on the GitHub branch `featur
 
 The existing `Assembly` provides owner-scoped SQLite documents and source text. The existing `KleinBridge` invokes the **preserved Klein automata** (including AUTOLING and DISEMINER) under a distinct deterministic per-position state key. `DimensionResearch` adds a shared-source registry, independent research receipts, source coverage tracking and cross-position comparison. Its `observe_klein` path uses actual Klein tools; its `run` path invokes an explicitly loaded local **compatible** language-model checkpoint. These are separate operations with separate receipts.
 
+Native positional meaning is taken from the existing `state-space/dimensions.js` `projectDimension`, not from a new invented set of synonyms. Each successful Klein tool receipt also retains `behavioralChain` from that file and `sourceCrystalChain` from `state-space/dimension-canon.js` as **different, unresolved chain interpretations**; neither is silently promoted over the other. Space remains unassigned as a researcher and its unresolved first-class/emergent role is untouched.
+
 The comparison works on exact document IDs and character ranges. Each position can be incomplete; failures and unprocessed passages remain visible. Native Klein analysis receipts are **not** proof of complete semantic extraction. A source may be fully traversed with information still missing.
 
 ## The three October 30 user-supplied ZIP references
