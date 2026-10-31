@@ -268,9 +268,9 @@ class TeamControl:
                 raise ValueError("Every assigned task must be independently verified first")
             accepted = self._check_proof(proof)
             self.db.execute(
-                "UPDATE team_projects SET status='awaiting_acceptance',completed=?,proof=? "
+                "UPDATE team_projects SET status='awaiting_acceptance',proof=? "
                 "WHERE id=? AND user=?",
-                (now(), json.dumps(accepted), project_id, self.r.user))
+                (json.dumps(accepted), project_id, self.r.user))
             self._notice("delivery-review", "Delivery evidence ready: " + project["title"],
                          "All registered tasks have evidence; final " + accepted["verified"] +
                          " receipt recorded. The project is awaiting owner acceptance; "
