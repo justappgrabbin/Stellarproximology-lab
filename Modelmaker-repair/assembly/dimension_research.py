@@ -230,7 +230,7 @@ class DimensionResearch:
         self._sync_shared()
         args = (self.runtime.user,) + ((dimension,) if dimension else ())
         where = ' AND dimension=?' if dimension else ''
-        return self.db.execute('SELECT * FROM dimension_assignments WHERE user=? AND document_id!='__POSITION__''+where+' ORDER BY dimension,document_id', args).fetchall()
+        return self.db.execute("SELECT * FROM dimension_assignments WHERE user=? AND document_id!='__POSITION__'"+where+' ORDER BY dimension,document_id', args).fetchall()
 
     def _work_items(self, dimension):
         for a in self._assignments(dimension):
