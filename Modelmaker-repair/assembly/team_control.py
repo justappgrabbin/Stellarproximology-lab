@@ -113,7 +113,7 @@ class TeamControl:
             if project["status"] != "active":
                 raise ValueError("Projects under delivery review are immutable")
             self.db.execute(
-                "INSERT INTO team_tasks VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO team_tasks VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                 (task_id, self.r.user, project_id, title, acceptance,
                  owner, priority, "assigned", None, None, now(), now()))
             self._notice("assignment", "Assignment: " + title,
