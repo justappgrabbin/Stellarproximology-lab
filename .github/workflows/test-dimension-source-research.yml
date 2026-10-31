@@ -1,0 +1,24 @@
+name: Dimension source research tests
+
+on:
+  push:
+    branches:
+      - feature/dimension-source-research-team
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile research module
+        run: python -m py_compile Modelmaker-repair/assembly/dimension_research.py Modelmaker-repair/assembly/desktop_server.py
+      - name: Run source coverage and evidence tests
+        working-directory: Modelmaker-repair
+        run: python -m unittest discover -s tests -p 'test_dimension_research.py' -v
