@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Modelmaker</title><link rel="stylesheet" href="/computer/workspace.css"></head><body>
-<header><h1>Modelmaker</h1><nav aria-label="Workspace"><button class="active" id="workspace-tab">Chat</button><a href="/training/" target="_blank" rel="noopener">Training</a><button id="klein-tab">Klein tools</button><button id="trident-tab">Klein research team</button><button id="edit-tab">Edit app</button></nav></header>
+<header><h1>Modelmaker</h1><nav aria-label="Workspace"><button class="active" id="workspace-tab">Chat</button><a href="/training/" target="_blank" rel="noopener">Training</a><button id="klein-tab">Klein tools</button><button id="trident-tab">Klein research team</button><button id="team-board-tab">Team command center <span id="team-bell-count" aria-label="Unread notifications"></span></button><button id="edit-tab">Edit app</button></nav></header>
 <main><form class="checkpoint" id="checkpoint-form"><label for="checkpoint">Checkpoint directory</label><input id="checkpoint" placeholder="./checkpoints"><button class="primary">Load model</button><button type="button" id="install-coder">Install coding model (CPU)</button></form><p id="status" role="status">Connecting to the local assembly…</p>
 <details class="books"><summary>Upload books, projects or files</summary><form id="books-form"><label for="books">Books, ZIP projects and other files</label><input id="books" type="file" multiple required><button class="primary" id="upload-books">Upload files</button></form><div id="books-result" aria-live="polite"></div><button type="button" id="uploaded-files">Show uploaded files</button><div id="uploads-list"></div><pre id="uploaded-preview" hidden></pre></details>
 <div class="columns" id="workspace"><section class="panel chat"><h2>Chat</h2><div id="messages" role="log" aria-live="polite"><div class="welcome">Load a trained model or study sources to begin.</div></div><form id="chat-form"><label for="message">Your message</label><textarea id="message" rows="3" placeholder="Type a message…" required></textarea><div class="actions"><button type="button" id="new-chat">New chat</button><button class="primary" id="send">Send</button></div></form></section>
@@ -40,5 +40,48 @@
 <label for="trident-prompt">Compare four trained positions on an identical prompt</label><textarea id="trident-prompt" rows="3"></textarea>
 <button type="button" id="trident-compare">Compare positional continuations</button>
 <pre id="trident-compare-result" aria-live="polite"></pre></section>
+
+<section class="panel" id="team-board" hidden>
+<h2>Four-model team command center</h2>
+<p class="team-explain">One shared TRIDENT with four Klein positions. All four can work on any project; the most relevant expert leads. An assigned position retains responsibility when it delegates. Completed positions are offered the next outstanding task.</p>
+<p class="team-explain">This is a real persistent project board, not simulated worker activity. The four autonomous workers and Android background push are not connected yet. Notification alerts work while this workspace is open and permitted.</p>
+<div class="team-actions">
+<button id="team-enable-notifications" type="button">Enable device notifications (while workspace is open)</button>
+<button id="team-refresh" type="button">Refresh live status</button>
+<span id="team-status" role="status" aria-live="polite"></span>
+</div>
+<div class="team-layout">
+<section>
+<h3>Start a project</h3>
+<form id="team-project-form">
+<label for="team-project-title">Project name</label><input id="team-project-title" required maxlength="160" placeholder="Repair state-space integration">
+<label for="team-project-objective">What must be built or repaired?</label><textarea id="team-project-objective" required rows="2" maxlength="4000"></textarea>
+<label for="team-project-acceptance">What proves the finished project works?</label><textarea id="team-project-acceptance" required rows="2" maxlength="4000"></textarea>
+<label for="team-project-lead">Project lead (rotates by expertise)</label>
+<select id="team-project-lead"><option>Movement</option><option>Evolution</option><option>Being</option><option>Design</option></select>
+<button class="primary">Create accountable project</button>
+</form>
+<hr>
+<h3>Add work to the shared plan</h3>
+<form id="team-task-form">
+<label for="team-task-project">Project</label><select id="team-task-project" required></select>
+<label for="team-task-title">Task</label><input id="team-task-title" required maxlength="160">
+<label for="team-task-acceptance">Task completion evidence required</label><textarea id="team-task-acceptance" required rows="2" maxlength="4000"></textarea>
+<label for="team-task-owner">Responsible position (delegation does not transfer responsibility)</label>
+<select id="team-task-owner"><option>Movement</option><option>Evolution</option><option>Being</option><option>Design</option></select>
+<label for="team-task-priority">Priority (5 highest)</label><select id="team-task-priority"><option>5</option><option>4</option><option selected>3</option><option>2</option><option>1</option></select>
+<button class="primary">Assign task</button>
+</form>
+</section>
+<section>
+<h3>Actual project activity</h3><div id="team-projects" aria-live="polite">Loading projects…</div>
+</section>
+</div>
+<hr>
+<h3>Notification history</h3>
+<p class="team-explain">Stored by the local Modelmaker backend. No sample alerts are inserted.</p>
+<div class="team-actions"><button id="team-ack" type="button">Mark displayed notifications read</button><span id="team-unread"></span></div>
+<div id="team-notifications" role="log" aria-live="polite">Loading actual events…</div>
+</section>
 <section class="panel" id="self-editor" hidden><h2>Edit this app</h2><p>Describe an improvement for the loaded model, or edit a file directly. Review the diff before applying. Failed checks restore the previous file.</p><label for="edit-file">Source file</label><select id="edit-file"></select><button id="edit-load">Load source</button><label for="edit-instruction">Requested change</label><textarea id="edit-instruction" rows="2" placeholder="Describe the improvement"></textarea><button id="edit-generate">Ask the model to propose an edit</button><label for="edit-source">Replacement source</label><textarea id="edit-source" rows="15" spellcheck="false"></textarea><button id="edit-propose">Preview diff</button><pre id="edit-diff"></pre><button id="edit-apply" class="primary" disabled>Apply reviewed edit and run checks</button><pre id="edit-result" aria-live="polite"></pre></section>
-</main><script type="module" src="/computer/workspace.mjs"></script></body></html>
+</main><script type="module" src="/computer/workspace.mjs"></script><script type="module" src="/computer/team_board.mjs"></script></body></html>
