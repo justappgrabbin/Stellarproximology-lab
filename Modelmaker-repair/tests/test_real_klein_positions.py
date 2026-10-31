@@ -32,10 +32,14 @@ class RealKleinPositionsTests(unittest.TestCase):
                 p = comparison['passages'][0]['positions']
                 self.assertEqual(set(p), DIMENSIONS)
                 for d in DIMENSIONS:
-                    self.assertIn(p[d]['klein_status'], ('processed','failed'))
-                    # Every invocation must have an actual retained receipt or a
-                    # reported error; never silently count the passage as read.
-                    self.assertTrue(p[d]['klein_receipt'] or p[d]['klein_error'])
+                    self.assertEqual(p[d]['klein_status'],'processed',
+                                     f'{d}: Klein pipeline failed: {p[d]["klein_error"]}')
+                    receipt=p[d]['klein_receipt']
+                    self.assertIsInstance(receipt,dict)
+                    self.assertGreaterEqual(len(receipt['outputs']),5)
+                    self.assertTrue(all(tool['accepted'] is True for tool in receipt['outputs']))
+                    self.assertTrue({'autoling','diseminer'}.issubset(
+                        {tool['toolId'] for tool in receipt['outputs']}))
                 # The same source was presented to four positions, without
                 # fabrication of neural training outcomes.
                 self.assertTrue(all(team.status()['dimensions'][d]['passages_verified']==0
