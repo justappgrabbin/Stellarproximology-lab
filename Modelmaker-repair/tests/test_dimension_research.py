@@ -133,6 +133,20 @@ class DimensionResearchTests(unittest.TestCase):
         self.assertTrue(all(compared[0]['positions'][d]['klein_status']=='processed' for d in DIMENSIONS))
         self.assertEqual(self.team.observe_klein('Movement',1,tool_runner=fake_klein)['attempts'][0]['state'],'processed')
 
+    def test_one_action_advances_all_four_over_identical_source(self):
+        self.team.configure_shared([{'dimension':d} for d in sorted(DIMENSIONS)])
+        calls=[]
+        def analyze(key,text,source):
+            calls.append((key,text,source))
+            return {'outputs':[{'accepted':True,'toolId':'autoling'}]}
+        result=self.team.observe_all_klein(1,tool_runner=analyze)
+        self.assertEqual(set(result['results']),DIMENSIONS)
+        self.assertEqual(len(calls),4)
+        self.assertEqual(len({x[1] for x in calls}),1)
+        self.assertEqual(len({x[0] for x in calls}),4)
+        self.assertEqual(len(result['comparison']['passages']),1)
+        self.assertTrue(all(result['status']['dimensions'][d]['klein_passages_processed']==1 for d in DIMENSIONS))
+
     def test_klein_rejection_cannot_be_counted_as_processed(self):
         self.team.configure_shared([{'dimension':d} for d in sorted(DIMENSIONS)])
         output=self.team.observe_klein('Being',1,tool_runner=lambda *args:{'outputs':[{'accepted':False}]})
