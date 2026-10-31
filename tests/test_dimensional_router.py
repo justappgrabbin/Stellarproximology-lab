@@ -7,7 +7,7 @@ import torch
 
 import training_core  # Inserts the repository's source/ runtime path, as the app does.
 from dimensional_router import (
-    DEFAULT_ROUTER, CHAINS, DIMENSIONS, FRAME_ORDERS, CrossLink,
+    DEFAULT_ROUTER, CHAINS, DIMENSIONS, FRAME_ORDERS, CrossLink, FrameOrder,
     DimensionalRouter, DimensionalRuleError,
 )
 from semantic_language_maker import semantic_features
@@ -76,6 +76,32 @@ class StructuralRoutingTests(unittest.TestCase):
                                           "to": "Creation", "frame_dimension": dimension})
             self.assertIsNone(trace["frame_order"])
             self.assertEqual(trace["frame_status"], "unresolved_order")
+
+    def test_approved_non_being_frame_order_can_be_added_without_changing_default(self):
+        order = FrameOrder(
+            leader="Movement",
+            order=("Movement", "Being", "Evolution", "Design", "Space"),
+            provenance="test-only approved fixture", evidence="manual test",
+            source_explicit=True)
+        custom = DimensionalRouter(frame_orders=(order,))
+        event = {"dimension": "Movement", "from": "Energy", "to": "Creation",
+                 "frame_dimension": "Movement"}
+        self.assertEqual(custom.route(event)["frame_order"], list(order.order))
+        self.assertEqual(custom.route(event)["frame_provenance"], order.provenance)
+        self.assertIsNone(DEFAULT_ROUTER.route(event)["frame_order"])
+        with self.assertRaisesRegex(DimensionalRuleError, "Cannot overwrite"):
+            DimensionalRouter(frame_orders=(FrameOrder(
+                "Being", FRAME_ORDERS["Being"], "replacement", "source", True),))
+
+    def test_unverified_frame_order_remains_proposed_and_inactive(self):
+        proposal = FrameOrder("Movement", ("Movement", "Being", "Evolution",
+                                           "Design", "Space"), "idea", "unreviewed", False)
+        router = DimensionalRouter(frame_orders=(proposal,))
+        trace = router.route({"dimension": "Movement", "from": "Energy",
+                              "to": "Creation", "frame_dimension": "Movement"})
+        self.assertEqual(trace["frame_status"], "proposed_order")
+        self.assertIsNone(trace["frame_order"])
+        self.assertIsNone(trace["frame_provenance"])
 
     def test_membership_does_not_fabricate_overlap(self):
         membership = DEFAULT_ROUTER.membership()
