@@ -39,7 +39,8 @@ class TeamControlTests(unittest.TestCase):
             owner, priority=5)
 
     def artifact(self, name, content=b"verified existing output"):
-        root = Path(self.temp.name)
+        root = Path(self.temp.name) / "computer-workspace" / "owner"
+        root.mkdir(parents=True, exist_ok=True)
         (root / name).write_bytes(content)
         return {"kind": "artifact", "relative_path": name}
 
@@ -130,6 +131,16 @@ class TeamControlTests(unittest.TestCase):
         self.owner.acknowledge(latest)
         self.assertEqual(self.owner.state()["unread"], 0)
         self.assertEqual(self.other.state()["unread"], 0)
+
+    def test_cannot_claim_artifacts_from_another_browser_profile(self):
+        item = self.task("Check owned artifact", "Movement")
+        other = Path(self.temp.name) / "computer-workspace" / "other"
+        other.mkdir(parents=True, exist_ok=True)
+        (other / "private.apk").write_bytes(b"another owner file")
+        with self.assertRaisesRegex(ValueError, "missing or escapes"):
+            self.owner.update_task(item["id"], "Movement", "verified",
+                                   {"kind": "artifact", "relative_path": "../other/private.apk"})
+        self.assertEqual(self.owner.task(item["id"])["state"], "assigned")
 
     def test_research_and_training_notifications_require_receipts(self):
         before = self.owner.feed()["latest"]
