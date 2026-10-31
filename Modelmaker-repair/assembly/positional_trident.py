@@ -174,6 +174,33 @@ class SharedTridentPositions:
                 (self.assembly.user,source_id)).fetchone()
         if source is None or quote not in source['text']:
             raise ValueError('Evidence quotation is absent from the original shared source')
+        quote_start=source['text'].find(quote)
+        quote_end=quote_start+len(quote)
+        # The same source is available to all positions, but the selected
+        # position must have ACTUALLY run its own Klein tools over this span.
+        try:
+            source_analyses=self.assembly.db.execute(
+                """SELECT status,output_json,passage_sha FROM dimension_klein_observations
+                   WHERE user=? AND dimension=? AND document_id=?
+                     AND passage_start<=? AND passage_end>=?""",
+                (self.assembly.user,position,source_id,quote_start,quote_end)).fetchall()
+        except Exception as exc:
+            raise ValueError('Run the shared-source native Klein team before adapter training') from exc
+        verified_tool=False
+        for analysis in source_analyses:
+            if analysis['status']!='processed' or not analysis['output_json']:
+                continue
+            evidence=json.loads(analysis['output_json'])
+            projection=evidence.get('position_projection')
+            outputs=evidence.get('outputs')
+            if (isinstance(projection,dict) and projection.get('position')==position and
+                projection.get('projection',{}).get('dimension')==position and
+                isinstance(outputs,list) and outputs and
+                all(isinstance(x,dict) and x.get('accepted') is True for x in outputs)):
+                verified_tool=True
+                break
+        if not verified_tool:
+            raise ValueError('This source span lacks an accepted native Klein analysis for the selected position')
         for field in ('prompt','response'):
             value = row.get(field)
             if not isinstance(value, str) or not value.strip() or len(value)>4000:
@@ -185,7 +212,8 @@ class SharedTridentPositions:
         return {'source_id': source_id, 'source_sha256': hashlib.sha256(
             source['text'].encode('utf-8')).hexdigest(),
             'source_quote_sha256': hashlib.sha256(quote.encode('utf-8')).hexdigest(),
-            'canonical_klein_provided': 'klein' in row}
+            'canonical_klein_provided': 'klein' in row,
+            'native_position_approved': True}
 
     def _loss(self, position, rows, require_grad=False):
         if not rows:
