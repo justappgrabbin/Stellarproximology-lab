@@ -22,6 +22,7 @@ sys.path.insert(0, str(BASE / "source"))
 import torch
 from model import TridentConfig
 from semantic_language_maker import NeuralMaker, RelationalTrident
+from dimensional_router import DEFAULT_ROUTER
 
 torch.set_num_threads(min(2, max(1, os.cpu_count() or 1)))
 GUARD = threading.RLock()
@@ -55,6 +56,11 @@ def _jsonl(path_or_text: str, *, from_file: bool = True) -> list[dict]:
             raise ValueError(f'Line {line_no}: morphology must be an array')
         if obj.get('human_design') is not None and not isinstance(obj['human_design'],dict):
             raise ValueError(f'Line {line_no}: human_design must be an object')
+        if 'dimension_events' in obj:
+            if not isinstance(obj['dimension_events'],list):
+                raise ValueError(f'Line {line_no}: dimension_events must be an array')
+            # Fail before training: unverified or missing edges are never labeled as facts.
+            DEFAULT_ROUTER.encode(obj['dimension_events'])
         result.append(obj)
     return result
 
@@ -176,13 +182,19 @@ def evaluate_uploaded(heldout_path: str):
         return {'revision':rev,**_evaluate(maker,_jsonl(heldout_path))}
 
 
-def sample(prompt:str,head:str,max_bytes:int,seed:int):
+def sample(prompt:str,head:str,max_bytes:int,seed:int,dimension_events=None):
     if not isinstance(prompt,str) or not 0<len(prompt.strip())<=2000:raise ValueError('Enter a short prompt')
     if head not in HEADS:raise ValueError('Invalid head')
     with GUARD:
         maker,rev=_load(ROOT)
         if maker is None:raise ValueError('No trained checkpoint exists')
-        result=maker.generate(prompt,head=head,max_new_bytes=int(max_bytes),seed=int(seed))
+        if isinstance(dimension_events,str):
+            if len(dimension_events)>16000:raise ValueError('Dimensional input too large')
+            dimension_events=json.loads(dimension_events or '[]')
+        if dimension_events is not None:
+            DEFAULT_ROUTER.encode(dimension_events)
+        features={'dimension_events':dimension_events} if dimension_events is not None else None
+        result=maker.generate(prompt,head=head,max_new_bytes=int(max_bytes),seed=int(seed),features=features)
         return {'revision':rev,'head':head,**result,'note':'Raw neural sampling; outputs are not verified.'}
 
 
@@ -195,7 +207,7 @@ def checkpoint_bundle()->str:
         with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED) as z:
             for basename in ['config.json','weights.pt','training.json','approved_corpus.jsonl']:
                 if (folder/basename).exists():z.write(folder/basename,arcname=f'trident/{basename}')
-            for basename in ['model.py','semantic_language_maker.py']:
+            for basename in ['model.py','semantic_language_maker.py','dimensional_router.py']:
                 source_file=BASE/'source'/basename
                 if source_file.is_file(): z.write(source_file,arcname=f'source/{basename}')
             z.writestr('README.txt',

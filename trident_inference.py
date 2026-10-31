@@ -13,6 +13,7 @@ from pathlib import Path
 
 from training_core import _read_pointer
 from semantic_language_maker import NeuralMaker
+from dimensional_router import DEFAULT_ROUTER
 
 MAX_BODY_BYTES = 65536
 
@@ -98,7 +99,11 @@ def handler_for(maker, model_id: str):
                     return self.json_response(413,{'error':'Invalid request size'})
                 data=json.loads(self.rfile.read(size))
                 prompt,count,head,seed=parse_request(data,model_id)
-                result=maker.generate(prompt,head=head,max_new_bytes=count,seed=seed)
+                events=data.get('dimension_events')
+                if events is not None:
+                    DEFAULT_ROUTER.encode(events)  # Reject unsupported edges, including guesses.
+                context={'dimension_events':events} if events is not None else None
+                result=maker.generate(prompt,head=head,max_new_bytes=count,seed=seed,features=context)
                 if not result.get('ready'):
                     return self.json_response(503,{'error':'Model has no usable trained weights'})
                 output=result['text']
