@@ -142,6 +142,16 @@ function renderProjects(projects) {
       }, 'primary'));
       article.append(proofRow);
     }
+    if (p.status === 'awaiting_acceptance') {
+      const review = node('div', '', 'team-task');
+      review.append(node('p', 'Delivery evidence is ready for your review. This is not a claim of successful runtime or Android installation.'));
+      review.append(node('p', 'Recorded final evidence: ' + JSON.stringify(p.proof), 'team-receipt'));
+      review.append(button('I reviewed and accept this delivery', async () => {
+        if (!window.confirm('Only accept after independently inspecting the actual deliverable against your project requirements. Approve this project?')) return;
+        await api('team/projects/' + p.id + '/accept', {approved: true});
+      }, 'primary'));
+      article.append(review);
+    }
     view.append(article);
   }
   const options = byId('team-task-project');
