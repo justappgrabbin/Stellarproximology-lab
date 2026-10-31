@@ -121,12 +121,116 @@ class DimensionResearch:
             self.db.executemany('INSERT INTO dimension_assignments VALUES(?,?,?,?,?,?)', prepared)
         return self.status()
 
+    def configure_shared(self, positions):
+        """Four independent positional models; one owner-scoped source collection."""
+        if not isinstance(positions, list) or len(positions) != 4:
+            raise ValueError('Provide four position configurations')
+        if {x.get('dimension') for x in positions if isinstance(x, dict)} != DIMENSIONS:
+            raise ValueError('Positions must include Movement, Evolution, Being, Design once each')
+        for x in positions:
+            if x.get('document_ids') is not None:
+                raise ValueError('Shared mode does not assign sources to individual positions')
+            checkpoint = x.get('checkpoint')
+            if checkpoint is not None and (not isinstance(checkpoint,str) or not checkpoint.strip()):
+                raise ValueError('Checkpoint must be an existing model path or null')
+            instructions = x.get('instructions')
+            if instructions is not None and (not isinstance(instructions,str) or not instructions.strip()):
+                raise ValueError('Position instructions must be nonempty text or omitted')
+        with self.runtime.lock, self.db:
+            self.db.execute("""CREATE TABLE IF NOT EXISTS dimension_team_config
+                (user TEXT PRIMARY KEY,source_policy TEXT NOT NULL)""")
+            self.db.execute('DELETE FROM dimension_assignments WHERE user=?',(self.runtime.user,))
+            self.db.execute('DELETE FROM dimension_passage_research WHERE user=?',(self.runtime.user,))
+            self.db.execute('INSERT OR REPLACE INTO dimension_team_config VALUES(?,?)',
+                            (self.runtime.user,'all-indexed-sources-shared'))
+            for x in positions:
+                dim = x['dimension']
+                # No fixed interpretations are invented for the four positions.
+                instruction = x.get('instructions') or (
+                    'Observe this shared source from the '+dim+' position; report original evidence '
+                    'and how the position changes your questions without assuming a definition.')
+                self.db.execute("""INSERT INTO dimension_assignments
+                    (user,dimension,checkpoint,document_id,instructions,source_sha)
+                    VALUES(?,?,?,?,?,?)""",(self.runtime.user,dim,x.get('checkpoint'),'__POSITION__',instruction,''))
+        return self.status()
+
+    def _sync_shared(self):
+        """Expose exactly the same evolving, indexed source pool to each position."""
+        policy = self.db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='dimension_team_config'").fetchone()
+        if not policy:
+            return
+        mode = self.db.execute('SELECT source_policy FROM dimension_team_config WHERE user=?',
+                               (self.runtime.user,)).fetchone()
+        if not mode or mode['source_policy'] != 'all-indexed-sources-shared':
+            return
+        positions = self.db.execute("""SELECT dimension,checkpoint,instructions FROM dimension_assignments
+            WHERE user=? AND document_id='__POSITION__' ORDER BY dimension""",
+            (self.runtime.user,)).fetchall()
+        if len(positions) != 4:
+            raise ValueError('Shared team has incomplete positional configuration')
+        docs = self.db.execute("""SELECT id,text FROM documents WHERE user=? AND length(trim(text))>0
+            ORDER BY id""",(self.runtime.user,)).fetchall()
+        desired = {(p['dimension'],d['id']):(p['checkpoint'],p['instructions'],_hash(d['text']))
+                   for p in positions for d in docs}
+        existing = self.db.execute("""SELECT dimension,document_id,checkpoint,instructions,source_sha
+            FROM dimension_assignments WHERE user=? AND document_id!='__POSITION__'""",
+            (self.runtime.user,)).fetchall()
+        current = {(e['dimension'],e['document_id']):(e['checkpoint'],e['instructions'],e['source_sha']) for e in existing}
+        with self.runtime.lock,self.db:
+            for (dim,doc_id), spec in current.items():
+                if desired.get((dim,doc_id)) != spec:
+                    self.db.execute('DELETE FROM dimension_assignments WHERE user=? AND dimension=? AND document_id=?',
+                                    (self.runtime.user,dim,doc_id))
+                    self.db.execute('DELETE FROM dimension_passage_research WHERE user=? AND dimension=? AND document_id=?',
+                                    (self.runtime.user,dim,doc_id))
+            for (dim,doc_id),spec in desired.items():
+                if current.get((dim,doc_id)) != spec:
+                    self.db.execute('INSERT INTO dimension_assignments VALUES(?,?,?,?,?,?)',
+                                    (self.runtime.user,dim,spec[0],doc_id,spec[1],spec[2]))
+
+    def compare(self, document_id=None, max_passages=100):
+        """Compare positions for identical source spans; preserve disagreement."""
+        self._sync_shared()
+        if not isinstance(max_passages,int) or not 1 <= max_passages <= 1000:
+            raise ValueError('max_passages must be 1..1000')
+        rows = self.db.execute("""SELECT p.dimension,p.document_id,p.passage_start,p.passage_end,
+            p.status,p.observations_json,d.title,d.source FROM dimension_passage_research p
+            JOIN documents d ON d.id=p.document_id AND d.user=p.user
+            WHERE p.user=? ORDER BY p.document_id,p.passage_start,p.dimension""",
+            (self.runtime.user,)).fetchall()
+        groups = {}
+        for r in rows:
+            if document_id is not None and r['document_id'] != document_id:
+                continue
+            key = (r['document_id'],r['passage_start'],r['passage_end'])
+            if key not in groups:
+                groups[key] = {'document_id':r['document_id'],'source':r['source'],'title':r['title'],
+                               'range':[r['passage_start'],r['passage_end']],'positions':{}}
+            groups[key]['positions'][r['dimension']] = {
+                'status':r['status'],'observations':json.loads(r['observations_json'] or '[]')}
+        compared = []
+        for k,g in list(groups.items())[:max_passages]:
+            for dim in sorted(DIMENSIONS):
+                g['positions'].setdefault(dim,{'status':'unread','observations':[]})
+            quotes = {dim:{o['quote'] for o in g['positions'][dim]['observations']}
+                      for dim in DIMENSIONS}
+            g['quotes_shared_by_all'] = sorted(set.intersection(*quotes.values())) if all(quotes.values()) else []
+            g['quotes_unique_to_position'] = {dim:sorted(quotes[dim]-set.union(*(quotes[other] for other in DIMENSIONS if other!=dim)))
+                                              for dim in sorted(DIMENSIONS)}
+            g['note'] = ('Quote overlap is not semantic agreement. '
+                         'All four positions retain their own interpretations.')
+            compared.append(g)
+        return {'mode':'same-source-compared-positions','dimensions':sorted(DIMENSIONS),
+                'sources_policy':'all-indexed-sources-shared','passages':compared,
+                'limits':'This compares anchored research records; it does not validate their interpretations.'}
+
     def _assignments(self, dimension=None):
         if dimension is not None and dimension not in DIMENSIONS:
             raise ValueError('Unknown dimension')
+        self._sync_shared()
         args = (self.runtime.user,) + ((dimension,) if dimension else ())
         where = ' AND dimension=?' if dimension else ''
-        return self.db.execute('SELECT * FROM dimension_assignments WHERE user=?'+where+' ORDER BY dimension,document_id', args).fetchall()
+        return self.db.execute('SELECT * FROM dimension_assignments WHERE user=? AND document_id!='__POSITION__''+where+' ORDER BY dimension,document_id', args).fetchall()
 
     def _work_items(self, dimension):
         for a in self._assignments(dimension):
@@ -176,8 +280,11 @@ class DimensionResearch:
             raise ValueError('Unknown dimension')
         if not isinstance(max_passages, int) or not 1 <= max_passages <= 100:
             raise ValueError('max_passages must be an integer from 1 through 100')
-        if not self._assignments(dimension):
-            raise ValueError(f'{dimension} has no assigned sources')
+        assigned = self._assignments(dimension)
+        if not assigned:
+            raise ValueError('No indexed shared sources. Import source files into Modelmaker first.')
+        if generate is None and any(not a['checkpoint'] for a in assigned):
+            raise ValueError('This position has no compatible trained checkpoint yet. Configure one before neural research.')
         worker = None
         attempts = []
         try:
@@ -260,7 +367,7 @@ def main():
     import argparse
     from .runtime import Assembly
     p = argparse.ArgumentParser(description='Modelmaker: dimension researchers, assigned-source complete reading')
-    p.add_argument('command', choices=['sources','configure','status','run','export'])
+    p.add_argument('command', choices=['sources','configure','status','run','export','compare'])
     p.add_argument('--manifest', help='JSON with {"assignments": [four explicit assignments]}')
     p.add_argument('--dimension', choices=sorted(DIMENSIONS))
     p.add_argument('--max-passages', type=int, default=1)
@@ -275,11 +382,14 @@ def main():
         elif a.command == 'configure':
             if not a.manifest:
                 p.error('configure requires --manifest')
-            result = team.configure(json.loads(Path(a.manifest).read_text(encoding='utf-8'))['assignments'])
+            manifest = json.loads(Path(a.manifest).read_text(encoding='utf-8'))
+            result = team.configure_shared(manifest['positions'])
         elif a.command == 'run':
             if not a.dimension:
                 p.error('run requires --dimension')
             result = team.run(a.dimension, a.max_passages)
+        elif a.command == 'compare':
+            result = team.compare()
         elif a.command == 'export':
             if not a.dimension:
                 p.error('export requires --dimension')
