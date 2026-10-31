@@ -31,6 +31,28 @@ class DimensionPlan(BaseModel):
 class DimensionWork(BaseModel):
     dimension:str
     max_passages:int=Field(default=1,ge=1,le=100)
+class PositionalTrain(BaseModel):
+    base_checkpoint:str=Field(min_length=1,max_length=4096)
+    dimension:str
+    examples:list[dict]=Field(min_length=1,max_length=2000)
+    heldout:list[dict]=Field(min_length=1,max_length=2000)
+    steps:int=Field(default=10,ge=1,le=1000)
+    learning_rate:float=Field(default=0.003,gt=0,le=0.1)
+class PositionalInfer(BaseModel):
+    base_checkpoint:str=Field(min_length=1,max_length=4096)
+    dimension:str
+    prompt:str=Field(min_length=1,max_length=4000)
+    head:str='research'
+    max_new_bytes:int=Field(default=64,ge=1,le=256)
+    seed:int=13
+    klein:list[list[float]]|None=None
+class PositionalCompare(BaseModel):
+    base_checkpoint:str=Field(min_length=1,max_length=4096)
+    prompt:str=Field(min_length=1,max_length=4000)
+    head:str='research'
+    max_new_bytes:int=Field(default=64,ge=1,le=256)
+    seed:int=13
+    klein:list[list[float]]|None=None
 class Source(BaseModel):
     text:str=Field(min_length=1,max_length=192000)
     title:str=Field(default='Workspace source',max_length=500)
@@ -224,6 +246,39 @@ def create_app(directory=None,mount_training=True):
     def research_klein(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
         return DimensionResearch(runtime(request)).observe_klein(body.dimension,body.max_passages)
+    # This retains ONE frozen owner-trained TRIDENT backbone and four adapter
+    # revisions. No source-reading or native Klein event silently trains weights.
+    def native_positions(request,base_checkpoint):
+        from .positional_trident import SharedTridentPositions
+        r=runtime(request)
+        return SharedTridentPositions(base_checkpoint,workspace=r.directory,assembly=r)
+    @app.get('/api/computer/research-team/trident/status')
+    def positional_status(base_checkpoint:str,request:Request):
+        return native_positions(request,base_checkpoint).status()
+    @app.post('/api/computer/research-team/trident/train')
+    def positional_train(body:PositionalTrain,request:Request):
+        return native_positions(request,body.base_checkpoint).train(
+            body.dimension,body.examples,body.heldout,
+            steps=body.steps,lr=body.learning_rate)
+    @app.post('/api/computer/research-team/trident/generate')
+    def positional_generate(body:PositionalInfer,request:Request):
+        return native_positions(request,body.base_checkpoint).generate(
+            body.dimension,body.prompt,klein=body.klein,head=body.head,
+            max_new_bytes=body.max_new_bytes,seed=body.seed)
+    @app.post('/api/computer/research-team/trident/compare')
+    def positional_compare(body:PositionalCompare,request:Request):
+        from .positional_trident import POSITIONS
+        model=native_positions(request,body.base_checkpoint)
+        results={}
+        for position in POSITIONS:
+            if model.revisions[position] is None:
+                results[position]={'status':'untrained','output':None}
+            else:
+                results[position]={'status':'trained-candidate',
+                    'output':model.generate(position,body.prompt,klein=body.klein,head=body.head,
+                                            max_new_bytes=body.max_new_bytes,seed=body.seed)}
+        return {'base_hash':model.base_hash,'same_input_for_every_position':True,
+                'positions':results,'note':'Separate probabilistic model outputs; not validated interpretation agreement.'}
     @app.get('/api/computer/research-team/compare')
     def research_compare(request:Request,document_id:str|None=None):
         from .dimension_research import DimensionResearch
