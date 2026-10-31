@@ -40,6 +40,15 @@ class RealKleinPositionsTests(unittest.TestCase):
                     self.assertTrue(all(tool['accepted'] is True for tool in receipt['outputs']))
                     self.assertTrue({'autoling','diseminer'}.issubset(
                         {tool['toolId'] for tool in receipt['outputs']}))
+                    projection=receipt.get('position_projection')
+                    self.assertIsInstance(projection,dict)
+                    self.assertEqual(projection['position'],d)
+                    self.assertEqual(projection['projection']['dimension'],d)
+                    self.assertTrue(projection['behavioralChain'])
+                    self.assertTrue(projection['sourceCrystalChain'])
+                    self.assertNotEqual(projection['behavioralChain'],
+                                        projection['sourceCrystalChain'])
+                    self.assertTrue(projection['noAutomaticCanonPromotion'])
                 # The same source was presented to four positions, without
                 # fabrication of neural training outcomes.
                 self.assertTrue(all(team.status()['dimensions'][d]['passages_verified']==0
