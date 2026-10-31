@@ -181,7 +181,9 @@ class TeamControl:
             name = proof.get("relative_path")
             if not isinstance(name, str) or not name.strip() or len(name) > 500:
                 raise ValueError("Artifact requires a workspace-relative path")
-            root = self.r.directory.resolve()
+            # Never allow a browser profile to assert ownership of another
+            # profile's file, even though Assembly's data root is shared.
+            root = (self.r.directory / "computer-workspace" / self.r.user).resolve()
             path = (root / name).resolve()
             if not path.is_relative_to(root) or not path.is_file():
                 raise ValueError("Artifact is missing or escapes this profile's workspace")
