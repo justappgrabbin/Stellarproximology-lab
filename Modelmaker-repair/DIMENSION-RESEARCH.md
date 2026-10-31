@@ -53,6 +53,7 @@ Configure **positions**, never per-position document lists. Example manifest for
 
 ```bash
 python -m assembly.dimension_research configure --manifest /path/to/positions.json
+python -m assembly.dimension_research klein-all --max-passages 5
 python -m assembly.dimension_research klein --dimension Movement --max-passages 5
 python -m assembly.dimension_research klein --dimension Evolution --max-passages 5
 python -m assembly.dimension_research klein --dimension Being --max-passages 5
@@ -76,6 +77,7 @@ A `checkpoint:null` position can do Klein native analysis but **cannot** claim a
 
 - `GET /api/computer/research-team/sources`
 - `POST /api/computer/research-team/configure` with the manifest body containing `positions`
+- `POST /api/computer/research-team/klein-all` with `max_passages_per_position` (advances all four)
 - `POST /api/computer/research-team/klein` with `dimension`, `max_passages`
 - `POST /api/computer/research-team/run` with `dimension`, `max_passages` (requires compatible checkpoint)
 - `GET /api/computer/research-team/status`
