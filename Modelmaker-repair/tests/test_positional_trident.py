@@ -112,8 +112,8 @@ class OneBackboneFourPositions(unittest.TestCase):
             changed = any(not torch.equal(value,self.initial[position][key])
                           for key,value in self.model.adapters[position].state_dict().items())
             self.assertTrue(changed,f'No learned positional parameters: {position}')
-        fingerprints={p:hashlib.sha256(
-            self.model.adapters[p].bias.detach().cpu().numpy().tobytes()).hexdigest()
+        fingerprints={p:hashlib.sha256(json.dumps(
+            self.model.adapters[p].bias.detach().flatten().tolist()).encode()).hexdigest()
             for p in POSITIONS}
         self.assertGreater(len(set(fingerprints.values())),1,'Four positions never diverged')
         self.assertEqual(self.base_sha,digest(self.base_dir/'weights.pt'))
