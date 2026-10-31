@@ -21,19 +21,29 @@ CHAINS: dict[str, tuple[str, ...]] = {
     "Design": ("Design", "Structure", "Progress", "Smell", "Life", "Art"),
     "Space": ("Space", "Form", "Illusion", "Hearing", "Music", "Freedom"),
 }
-QUESTIONS = {
-    "Movement": "WHEN", "Evolution": "WHAT", "Being": "WHERE",
-    "Design": "WHY", "Space": "WHO",
+# Distinct source texts disagree on Movement and Being interrogatives.
+# Preserve both interpretations; no single question mapping is silently canonized.
+QUESTION_SOURCE_CLAIMS = {
+    "Synthia_Semantic_Swarm_Master_Spec_v3.docx": {
+        "Movement": "WHEN", "Evolution": "WHAT", "Being": "WHERE",
+        "Design": "WHY", "Space": "WHO",
+    },
+    "Pure Synthia Automata merged/dimension-router.js": {
+        "Movement": "WHERE", "Evolution": "WHAT", "Being": "WHEN",
+        "Design": "WHY", "Space": "WHO",
+    },
 }
+QUESTION_CONFLICTS = ("Movement", "Being")
 AXES = {
     "Movement": "vertical", "Evolution": "horizontal",
-    "Being": "vertical", "Design": "diagonal", "Space": "horizontal-emergent",
+    "Being": "vertical", "Design": "diagonal", "Space": "horizontal",
 }
 # This is the one full interdimensional traversal order explicitly in Paper.html.
 # Do NOT rotate it to manufacture the missing four orders.
 FRAME_ORDERS = {
     "Being": ("Being", "Movement", "Space", "Design", "Evolution"),
 }
+SPACE_ROLE_UNRESOLVED = ("named fifth perspective", "emergent from four origin dimensions")
 FEATURE_WIDTH = 32
 FEATURE_CHANNEL = 5  # Existing TRIDENT feature channel for semantic spacetime.
 MAX_EVENTS = 32
