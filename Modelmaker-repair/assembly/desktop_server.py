@@ -53,6 +53,32 @@ class PositionalCompare(BaseModel):
     max_new_bytes:int=Field(default=64,ge=1,le=256)
     seed:int=13
     klein:list[list[float]]|None=None
+class TeamProjectInput(BaseModel):
+    title:str=Field(min_length=1,max_length=160)
+    objective:str=Field(min_length=1,max_length=4000)
+    acceptance:str=Field(min_length=1,max_length=4000)
+    lead:str
+class TeamTaskInput(BaseModel):
+    project_id:str=Field(min_length=32,max_length=32)
+    title:str=Field(min_length=1,max_length=160)
+    acceptance:str=Field(min_length=1,max_length=4000)
+    owner:str
+    priority:int=Field(default=3,ge=1,le=5)
+class TeamDelegationInput(BaseModel):
+    actor:str
+    worker:str=Field(min_length=1,max_length=160)
+class TeamTaskUpdateInput(BaseModel):
+    actor:str
+    state:str
+    evidence:dict|None=None
+class TeamDeliveryInput(BaseModel):
+    actor:str
+    proof:dict
+class TeamAckInput(BaseModel):
+    through_id:int=Field(ge=0)
+class TeamAcceptanceInput(BaseModel):
+    approved:bool
+
 class Source(BaseModel):
     text:str=Field(min_length=1,max_length=192000)
     title:str=Field(default='Workspace source',max_length=500)
@@ -122,8 +148,12 @@ def create_app(directory=None,mount_training=True):
     def desktop():return FileResponse(ROOT/'computer/index.html')
     @app.get('/computer/{asset}')
     def asset(asset:str):
-        if asset not in ('workspace.mjs','workspace.css'):raise HTTPException(404)
-        return FileResponse(ROOT/'computer'/asset,media_type='text/javascript' if asset.endswith('mjs') else 'text/css')
+        if asset not in ('workspace.mjs','workspace.css','team_board.mjs','team_notifications_sw.js'):
+            raise HTTPException(404)
+        headers={'Service-Worker-Allowed':'/'} if asset=='team_notifications_sw.js' else {}
+        return FileResponse(ROOT/'computer'/asset,
+            media_type='text/css' if asset.endswith('css') else 'text/javascript',
+            headers=headers)
     @app.get('/api/computer/status')
     def status(request:Request):
         r=runtime(request)
@@ -218,6 +248,39 @@ def create_app(directory=None,mount_training=True):
     @app.get('/api/computer/tools')
     def tools(request:Request):
         r=runtime(request);return r.bridge.request('catalog',user=r.user)
+    # Persistent, owner-scoped execution board and notifications for the SAME
+    # four trained positions. These endpoints record assignments and real receipts;
+    # they do not pretend to start autonomous workers or background Android push.
+    def team(request):
+        from .team_control import TeamControl
+        return TeamControl(runtime(request))
+    @app.get('/api/computer/team/state')
+    def team_state(request:Request,project_id:str|None=None):
+        return team(request).state(project_id)
+    @app.get('/api/computer/team/notifications')
+    def team_notifications(request:Request,after:int=0,limit:int=100):
+        return team(request).feed(after,limit)
+    @app.post('/api/computer/team/notifications/ack')
+    def team_ack(body:TeamAckInput,request:Request):
+        return team(request).acknowledge(body.through_id)
+    @app.post('/api/computer/team/projects')
+    def team_project(body:TeamProjectInput,request:Request):
+        return team(request).create_project(body.title,body.objective,body.acceptance,body.lead)
+    @app.post('/api/computer/team/tasks')
+    def team_task(body:TeamTaskInput,request:Request):
+        return team(request).add_task(body.project_id,body.title,body.acceptance,body.owner,body.priority)
+    @app.post('/api/computer/team/tasks/{task_id}/delegate')
+    def team_delegate(task_id:str,body:TeamDelegationInput,request:Request):
+        return team(request).delegate(task_id,body.actor,body.worker)
+    @app.post('/api/computer/team/tasks/{task_id}/state')
+    def team_update_task(task_id:str,body:TeamTaskUpdateInput,request:Request):
+        return team(request).update_task(task_id,body.actor,body.state,body.evidence)
+    @app.post('/api/computer/team/projects/{project_id}/deliver')
+    def team_deliver(project_id:str,body:TeamDeliveryInput,request:Request):
+        return team(request).complete_project(project_id,body.actor,body.proof)
+    @app.post('/api/computer/team/projects/{project_id}/accept')
+    def team_accept(project_id:str,body:TeamAcceptanceInput,request:Request):
+        return team(request).accept_project(project_id,body.approved)
     # The research team is a backend extension of this EXISTING Modelmaker, not
     # an independent agent stack. Assignments are owner supplied; no source is
     # silently selected and work never starts without an explicit request.
@@ -236,16 +299,29 @@ def create_app(directory=None,mount_training=True):
     @app.post('/api/computer/research-team/run')
     def research_run(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
-        return DimensionResearch(runtime(request)).run(body.dimension,body.max_passages)
+        from .team_control import TeamControl
+        r=runtime(request)
+        result=DimensionResearch(r).run(body.dimension,body.max_passages)
+        TeamControl(r).record_research(body.dimension,result)
+        return result
     @app.post('/api/computer/research-team/klein-all')
     def research_klein_all(body:dict,request:Request):
         from .dimension_research import DimensionResearch
+        from .team_control import TeamControl
         maximum=body.get('max_passages_per_position',5)
-        return DimensionResearch(runtime(request)).observe_all_klein(maximum)
+        r=runtime(request)
+        result=DimensionResearch(r).observe_all_klein(maximum)
+        for dimension,receipt in result['results'].items():
+            TeamControl(r).record_research(dimension,receipt,kind='Klein analysis')
+        return result
     @app.post('/api/computer/research-team/klein')
     def research_klein(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
-        return DimensionResearch(runtime(request)).observe_klein(body.dimension,body.max_passages)
+        from .team_control import TeamControl
+        r=runtime(request)
+        result=DimensionResearch(r).observe_klein(body.dimension,body.max_passages)
+        TeamControl(r).record_research(body.dimension,result,kind='Klein analysis')
+        return result
     # This retains ONE frozen owner-trained TRIDENT backbone and four adapter
     # revisions. No source-reading or native Klein event silently trains weights.
     def native_positions(request,base_checkpoint):
@@ -257,9 +333,13 @@ def create_app(directory=None,mount_training=True):
         return native_positions(request,base_checkpoint).status()
     @app.post('/api/computer/research-team/trident/train')
     def positional_train(body:PositionalTrain,request:Request):
-        return native_positions(request,body.base_checkpoint).train(
+        from .team_control import TeamControl
+        r=runtime(request)
+        result=native_positions(request,body.base_checkpoint).train(
             body.dimension,body.examples,body.heldout,
             steps=body.steps,lr=body.learning_rate)
+        TeamControl(r).record_adapter_training(result)
+        return result
     @app.post('/api/computer/research-team/trident/generate')
     def positional_generate(body:PositionalInfer,request:Request):
         return native_positions(request,body.base_checkpoint).generate(
