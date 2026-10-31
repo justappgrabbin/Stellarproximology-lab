@@ -18,6 +18,7 @@ import shutil
 import sys
 import tempfile
 import uuid
+from functools import lru_cache
 from pathlib import Path
 
 import torch
@@ -69,6 +70,16 @@ def _checkpoint_folder(path):
     return root
 
 
+@lru_cache(maxsize=4)
+def _shared_frozen_native_trident(folder, base_hash):
+    """Share ONE immutable in-process backbone among separate user position runs."""
+    maker = NeuralMaker.load(folder)
+    maker.model.eval()
+    for parameter in maker.model.parameters():
+        parameter.requires_grad_(False)
+    return maker
+
+
 class KleinPositionAdapter(nn.Module):
     """Per-tool rank-4 residual over TRIDENT's existing [batch, 8, 32] contract."""
     def __init__(self, rank=4):
@@ -99,13 +110,13 @@ class SharedTridentPositions:
         self.base_hash = hashlib.sha256((
             _sha_file(self.base_folder / 'weights.pt') + ':' +
             _sha_file(self.base_folder / 'config.json')).encode()).hexdigest()
-        self.maker = NeuralMaker.load(self.base_folder)
-        self.base_steps = self.maker.steps
-        self.base = self.maker.model.to(device).eval()
-        self.codec = self.maker.codec
         self.device = torch.device(device)
-        for parameter in self.base.parameters():
-            parameter.requires_grad_(False)
+        if self.device.type != 'cpu':
+            raise ValueError('Shared native TRIDENT runtime currently requires CPU')
+        self.maker = _shared_frozen_native_trident(str(self.base_folder),self.base_hash)
+        self.base_steps = self.maker.steps
+        self.base = self.maker.model
+        self.codec = self.maker.codec
         self.adapters = nn.ModuleDict({
             position: KleinPositionAdapter() for position in POSITIONS
         }).to(self.device)
