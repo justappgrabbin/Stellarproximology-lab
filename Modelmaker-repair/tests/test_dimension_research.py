@@ -114,6 +114,32 @@ class DimensionResearchTests(unittest.TestCase):
             self.assertIn('new-doc',{x['document_id'] for x in status[dim]['sources']})
         self.assertNotIn('other-doc',{x['document_id'] for x in status['Design']['sources']})
 
+    def test_klein_position_states_are_independent_with_identical_input(self):
+        self.team.configure_shared([{'dimension':d} for d in sorted(DIMENSIONS)])
+        called = []
+        def fake_klein(position_key,passage,source_ref):
+            called.append((position_key,passage,source_ref))
+            return {'outputs':[{'accepted':True,'toolId':'autoling',
+                                'output':{'source_ref':source_ref}}]}
+        for dim in sorted(DIMENSIONS):
+            output = self.team.observe_klein(dim,max_passages=1,tool_runner=fake_klein)
+            self.assertEqual(output['attempts'][0]['state'],'processed')
+            self.assertEqual(output['coverage']['klein_passages_processed'],1)
+        self.assertEqual(len({x[0] for x in called}),4)
+        self.assertEqual(len({x[1] for x in called}),1)
+        self.assertEqual(len({x[2] for x in called}),1)
+        compared=self.team.compare()['passages']
+        self.assertEqual(len(compared),1)
+        self.assertTrue(all(compared[0]['positions'][d]['klein_status']=='processed' for d in DIMENSIONS))
+        self.assertEqual(self.team.observe_klein('Movement',1,tool_runner=fake_klein)['attempts'][0]['state'],'processed')
+
+    def test_klein_rejection_cannot_be_counted_as_processed(self):
+        self.team.configure_shared([{'dimension':d} for d in sorted(DIMENSIONS)])
+        output=self.team.observe_klein('Being',1,tool_runner=lambda *args:{'outputs':[{'accepted':False}]})
+        self.assertEqual(output['attempts'][0]['state'],'failed')
+        self.assertEqual(output['coverage']['klein_passages_processed'],0)
+        self.assertEqual(output['coverage']['klein_passages_failed'],1)
+
     def test_reject_per_position_source_selection_in_shared_mode(self):
         positions=[{'dimension':d} for d in sorted(DIMENSIONS)]
         positions[0]['document_ids']=['Movement-doc']
