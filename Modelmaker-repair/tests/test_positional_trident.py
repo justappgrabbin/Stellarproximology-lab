@@ -95,6 +95,33 @@ class OneBackboneFourPositions(unittest.TestCase):
         self.assertEqual(reloaded.optimizer_steps['Movement'],1)
         self.assertEqual(reloaded.optimizer_steps['Evolution'],1)
 
+    def test_all_four_positions_learn_separately_over_same_shared_source(self):
+        training_targets={
+            'Movement':'The river flows along the bridge.',
+            'Evolution':'The river can change as the water rises.',
+            'Being':'The observer and river are present together.',
+            'Design':'The bridge structures the observation point.'
+        }
+        for position in POSITIONS:
+            self.model.train(position,[self.row(position,'What does this source show?',training_targets[position])],
+                             [self.row(position,'What was observed?', 'The river was observed.')],steps=1)
+        for position in POSITIONS:
+            self.assertEqual(self.model.optimizer_steps[position],1)
+            self.assertIsNotNone(self.model.revisions[position])
+            changed = any(not torch.equal(value,self.initial[position][key])
+                          for key,value in self.model.adapters[position].state_dict().items())
+            self.assertTrue(changed,f'No learned positional parameters: {position}')
+        fingerprints={p:hashlib.sha256(
+            self.model.adapters[p].bias.detach().cpu().numpy().tobytes()).hexdigest()
+            for p in POSITIONS}
+        self.assertGreater(len(set(fingerprints.values())),1,'Four positions never diverged')
+        self.assertEqual(self.base_sha,digest(self.base_dir/'weights.pt'))
+        loaded=SharedTridentPositions(self.base_dir,workspace=self.root/'memory',assembly=self.owner)
+        self.assertTrue(all(loaded.revisions[p]==self.model.revisions[p] for p in POSITIONS))
+        for p in POSITIONS:
+            for k,t in self.model.adapters[p].state_dict().items():
+                self.assertTrue(torch.equal(t,loaded.adapters[p].state_dict()[k]))
+
     def test_reject_unapproved_unanchored_or_overlap(self):
         row=self.row('Design')
         hold=self.row('Design','What happens?','The river moves.')
