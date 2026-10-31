@@ -180,7 +180,8 @@ class SharedTridentPositions:
         # position must have ACTUALLY run its own Klein tools over this span.
         try:
             source_analyses=self.assembly.db.execute(
-                """SELECT status,output_json,passage_sha FROM dimension_klein_observations
+                """SELECT status,output_json,passage_sha,passage_start,passage_end
+                   FROM dimension_klein_observations
                    WHERE user=? AND dimension=? AND document_id=?
                      AND passage_start<=? AND passage_end>=?""",
                 (self.assembly.user,position,source_id,quote_start,quote_end)).fetchall()
@@ -193,8 +194,12 @@ class SharedTridentPositions:
             evidence=json.loads(analysis['output_json'])
             projection=evidence.get('position_projection')
             outputs=evidence.get('outputs')
-            if (isinstance(projection,dict) and projection.get('position')==position and
+            current_span = source['text'][analysis['passage_start']:analysis['passage_end']]
+            current_hash = hashlib.sha256(current_span.encode('utf-8')).hexdigest()
+            if (analysis['passage_sha']==current_hash and
+                isinstance(projection,dict) and projection.get('position')==position and
                 projection.get('projection',{}).get('dimension')==position and
+                projection.get('sourceHash')==current_hash and
                 isinstance(outputs,list) and outputs and
                 all(isinstance(x,dict) and x.get('accepted') is True for x in outputs)):
                 verified_tool=True
@@ -205,6 +210,12 @@ class SharedTridentPositions:
             value = row.get(field)
             if not isinstance(value, str) or not value.strip() or len(value)>4000:
                 raise ValueError(f'Approved example has invalid {field}')
+        # Native NeuralMaker._example would truncate overlong prompts/replies.
+        # Reject instead so training receipts never imply that unseen text was read.
+        encoded_prompt = self.codec.encode('User: '+row['prompt'].strip()+'\\nSynthia: ')
+        encoded_reply = self.codec.encode(row['response']) + [EOS]
+        if 1+len(encoded_prompt)+len(encoded_reply)>self.maker.max_seq_len:
+            raise ValueError('Training example exceeds native TRIDENT context; refusing silent truncation')
         if 'klein' in row:
             matrix = torch.as_tensor(row['klein'],dtype=torch.float32)
             if matrix.shape != (8,32) or not torch.isfinite(matrix).all():
