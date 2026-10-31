@@ -72,6 +72,7 @@ class OneBackboneFourPositions(unittest.TestCase):
         for k,v in self.model.base.state_dict().items():
             self.assertTrue(torch.equal(v,self.frozen[k]),f'Frozen backbone changed: {k}')
         reloaded=SharedTridentPositions(self.base_dir,workspace=self.root/'memory',assembly=self.owner)
+        self.assertIs(self.model.base,reloaded.base,'Shared TRIDENT unexpectedly loaded duplicate backbone weights')
         self.assertEqual(reloaded.revisions['Movement'],receipt['revision'])
         for k,v in self.model.adapters['Movement'].state_dict().items():
             self.assertTrue(torch.equal(v,reloaded.adapters['Movement'].state_dict()[k]))
