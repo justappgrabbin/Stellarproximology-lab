@@ -212,7 +212,7 @@ class SharedTridentPositions:
                 raise ValueError(f'Approved example has invalid {field}')
         # Native NeuralMaker._example would truncate overlong prompts/replies.
         # Reject instead so training receipts never imply that unseen text was read.
-        encoded_prompt = self.codec.encode('User: '+row['prompt'].strip()+'\\nSynthia: ')
+        encoded_prompt = self.codec.encode('User: '+row['prompt'].strip()+'\nSynthia: ')
         encoded_reply = self.codec.encode(row['response']) + [EOS]
         if 1+len(encoded_prompt)+len(encoded_reply)>self.maker.max_seq_len:
             raise ValueError('Training example exceeds native TRIDENT context; refusing silent truncation')
