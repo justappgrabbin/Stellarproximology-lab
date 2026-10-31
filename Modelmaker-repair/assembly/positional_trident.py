@@ -338,3 +338,51 @@ class SharedTridentPositions:
                 'raw_bytes_generated':len(results),'trained_adapter':True,
                 'canonical_klein_provided':klein is not None,
                 'note':'Unverified probabilistic byte continuation, not an established research finding.'}
+
+
+def main():
+    import argparse
+    from .runtime import Assembly
+
+    parser=argparse.ArgumentParser(description='Train native Klein positional adapters without changing shared TRIDENT weights')
+    parser.add_argument('command',choices=('status','train','generate'))
+    parser.add_argument('--base',required=True,help='Directory with existing trained native TRIDENT config.json and weights.pt, or revision workspace')
+    parser.add_argument('--data',help='Same private Modelmaker data directory used for uploaded source documents')
+    parser.add_argument('--user',default='local',help='Existing Modelmaker profile key')
+    parser.add_argument('--position',choices=POSITIONS)
+    parser.add_argument('--train-jsonl',help='Owner-approved source-anchored JSONL training rows')
+    parser.add_argument('--heldout-jsonl',help='Separate owner-approved source-anchored JSONL evaluation rows')
+    parser.add_argument('--steps',type=int,default=10)
+    parser.add_argument('--prompt')
+    parser.add_argument('--max-new-bytes',type=int,default=64)
+    args=parser.parse_args()
+    from .runtime import ROOT
+    data=args.data or os.environ.get('MODELMAKER_DATA') or str(ROOT/'.modelmaker')
+    assembly=Assembly(data,args.user)
+    try:
+        model=SharedTridentPositions(args.base,workspace=assembly.directory,assembly=assembly)
+        if args.command=='status':
+            result=model.status()
+        elif args.command=='train':
+            if not args.position or not args.train_jsonl or not args.heldout_jsonl:
+                parser.error('train requires --position, --train-jsonl and --heldout-jsonl')
+            def load_jsonl(path):
+                path=Path(path)
+                if not path.is_file() or path.stat().st_size>5_000_000:
+                    raise ValueError('Training JSONL file is missing or larger than 5 MB')
+                values=[json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()]
+                if not isinstance(values,list) or not values or any(not isinstance(x,dict) for x in values):
+                    raise ValueError('Expect a nonempty JSONL record set')
+                return values
+            result=model.train(args.position,load_jsonl(args.train_jsonl),load_jsonl(args.heldout_jsonl),steps=args.steps)
+        else:
+            if not args.position or not args.prompt:
+                parser.error('generate requires --position and --prompt')
+            result=model.generate(args.position,args.prompt,max_new_bytes=args.max_new_bytes)
+        print(json.dumps(result,indent=2,ensure_ascii=False))
+    finally:
+        assembly.close()
+
+
+if __name__=='__main__':
+    main()
