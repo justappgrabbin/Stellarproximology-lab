@@ -27,7 +27,7 @@ class Tool(BaseModel):
     tool:str=Field(min_length=1,max_length=100)
     arguments:dict=Field(default_factory=dict)
 class DimensionPlan(BaseModel):
-    assignments:list[dict]=Field(min_length=4,max_length=4)
+    positions:list[dict]=Field(min_length=4,max_length=4)
 class DimensionWork(BaseModel):
     dimension:str
     max_passages:int=Field(default=1,ge=1,le=100)
@@ -210,11 +210,15 @@ def create_app(directory=None,mount_training=True):
     @app.post('/api/computer/research-team/configure')
     def research_configure(body:DimensionPlan,request:Request):
         from .dimension_research import DimensionResearch
-        return DimensionResearch(runtime(request)).configure(body.assignments)
+        return DimensionResearch(runtime(request)).configure_shared(body.positions)
     @app.post('/api/computer/research-team/run')
     def research_run(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
         return DimensionResearch(runtime(request)).run(body.dimension,body.max_passages)
+    @app.get('/api/computer/research-team/compare')
+    def research_compare(request:Request,document_id:str|None=None):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).compare(document_id=document_id)
     @app.get('/api/computer/research-team/export/{dimension}')
     def research_export(dimension:str,request:Request):
         from .dimension_research import DimensionResearch
