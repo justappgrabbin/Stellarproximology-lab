@@ -1,0 +1,60 @@
+name: Validate dimensional graph rules (no ML dependencies)
+on:
+  push:
+    branches: [fix/trident-dimensional-rule-routing]
+    paths:
+      - source/dimensional_router.py
+      - .github/workflows/test-trident-dimension-fast.yml
+  pull_request:
+    paths:
+      - source/dimensional_router.py
+      - tests/test_dimensional_router.py
+      - .github/workflows/test-trident-dimension-fast.yml
+permissions:
+  contents: read
+jobs:
+  verify-source-locked-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile Python application and graph code
+        run: python -m compileall -q source/ app.py training_core.py trident_inference.py
+      - name: Exercise real dimensional graph mechanics without external ML runtime
+        run: |
+          python - <<'PY'
+          from source.dimensional_router import (
+              CHAINS, DIMENSIONS, DEFAULT_ROUTER, FRAME_ORDERS,
+              CrossLink, FrameOrder, DimensionalRouter, DimensionalRuleError
+          )
+          assert len(CHAINS) == len(DIMENSIONS) == 5
+          count = 0
+          for dim, chain in CHAINS.items():
+              for a,b in zip(chain,chain[1:]):
+                  assert DEFAULT_ROUTER.route({"dimension": dim, "from": a, "to": b})["supported"]
+                  count += 1
+          assert count == 24, count
+          assert not DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation"})["causal_transition_verified"]
+          event={"dimension":"Movement","from":"Seeing","to_dimension":"Space","to":"Illusion"}
+          assert DEFAULT_ROUTER.route(event)["status"] == "unresolved_cross_link"
+          try:
+              DEFAULT_ROUTER.encode([event])
+              raise AssertionError("Unsupported crossing incorrectly accepted")
+          except DimensionalRuleError:
+              pass
+          assert tuple(DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Being"})["frame_order"]) == FRAME_ORDERS["Being"]
+          assert DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Space"})["frame_order"] is None
+          try:
+              DEFAULT_ROUTER.encode([{"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Space"}])
+              raise AssertionError("Unknown leading order admitted for training")
+          except DimensionalRuleError:
+              pass
+          rule=FrameOrder("Movement", ("Movement","Being","Evolution","Design","Space"), "test-source", "test-evidence", True)
+          custom=DimensionalRouter(frame_orders=(rule,))
+          assert custom.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Movement"})["frame_order"] == list(rule.order)
+          assert DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Movement"})["frame_order"] is None
+          print(f"{count} source-chain transitions and critical safeguards validated")
+          PY

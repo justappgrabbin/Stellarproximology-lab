@@ -20,6 +20,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from model import Trident, TridentConfig
+from dimensional_router import DEFAULT_ROUTER, FEATURE_CHANNEL
 
 # Lossless Unicode encoding: bytes are not truncated, remapped, or hashed.
 PAD, BOS, EOS, SEP = 256, 257, 258, 259
@@ -74,7 +75,8 @@ def _slot(text: str, width: int) -> int:
 def semantic_features(prompt: str, *, relations: list[dict] | None = None,
                       morphology: list[dict] | None = None,
                       style: str = 'neutral', human_design: dict | None = None,
-                      klein: Any = None) -> torch.Tensor:
+                      klein: Any = None,
+                      dimension_events: list[dict] | None = None) -> torch.Tensor:
     """Eight tool channels x 32 differentiable numeric inputs.
 
     Channels: [0] DISEMINER [1] AUTOLING [2] ATO [3] MESSY
@@ -109,6 +111,12 @@ def semantic_features(prompt: str, *, relations: list[dict] | None = None,
         if 'morphemes' in m:
             for part in m['morphemes'][:8]:
                 f[4, _slot('m:'+str(part), 32)] += 0.15
+    if dimension_events is not None:
+        # Validates exact source-defined edges; no cross-dimensional assumptions.
+        # Feature channels summarize transitions; the full path stays in the
+        # approved training record. This does not change model architecture.
+        graph_features, _ = DEFAULT_ROUTER.encode(dimension_events)
+        f[FEATURE_CHANNEL] += torch.tensor(graph_features, dtype=torch.float32)
     if human_design:
         # Human Design is a voluntary symbolic context, not an empirical
         # predictor of personality, grammar, or factual correctness.
@@ -252,7 +260,7 @@ class NeuralMaker:
         feature = semantic_features(
             row['prompt'], relations=row.get('relations'), morphology=row.get('morphology'),
             style=row.get('style','neutral'), human_design=row.get('human_design'),
-            klein=row.get('klein'))[None].to(self.device)
+            klein=row.get('klein'), dimension_events=row.get('dimension_events'))[None].to(self.device)
         return inp, tgt, feature
 
     def fit(self, rows: list[dict], *, steps: int = 30,

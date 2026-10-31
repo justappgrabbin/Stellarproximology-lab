@@ -55,11 +55,14 @@ Your hosted Hugging Face Modelmaker Space starts with no app. This package suppl
         with gr.Row():
             length=gr.Slider(1,256,value=72,step=1,label='Maximum output bytes')
             seed=gr.Number(label='Reproducible seed',value=11,precision=0)
+        dimension_events=gr.Textbox(label='Verified dimension transitions (JSON array; optional)',
+            value='[]', lines=3,
+            info='Example: [{"dimension":"Movement","from":"Energy","to":"Creation"}]. Unverified cross-links are rejected.')
         btn=gr.Button('Generate from current trained weights')
         output=gr.Code(language='json',label='Unverified neural continuation')
-        def guarded_sample(a,b,c,d,profile: gr.OAuthProfile | None):
-            return _safe(sample,a,b,c,d,profile=profile)
-        btn.click(guarded_sample,inputs=[prompt,head,length,seed],outputs=output)
+        def guarded_sample(a,b,c,d,e,profile: gr.OAuthProfile | None):
+            return _safe(sample,a,b,c,d,e,profile=profile)
+        btn.click(guarded_sample,inputs=[prompt,head,length,seed,dimension_events],outputs=output)
     with gr.Tab('Export weights'):
         gr.Markdown('Each training session creates a new immutable revision, and the previous revision remains available on disk. Download weights before Space restarts if you have no persistent storage. The original Hugging Face 3-head model and the locally extended Klein TRIDENT differ; **do not overwrite one with a checkpoint from the other**.')
         export=gr.Button('Create downloadable checkpoint ZIP')
