@@ -95,7 +95,7 @@ function renderTask(task) {
     {label: 'Verified artifact file', value: 'artifact'},
     {label: 'Complete source-anchored research', value: 'research'}
   ], 'artifact');
-  const artifact = input('Path to actual artifact inside Modelmaker data directory');
+  const artifact = input('Path to actual artifact inside your profile workspace');
   const proofRow = node('div', '', 'team-task-actions');
   proofType.onchange = () => {
     artifact.hidden = proofType.value !== 'artifact';
@@ -131,7 +131,7 @@ function renderProjects(projects) {
         {label:'Final artifact exists',value:'artifact'},
         {label:'Fully anchored research',value:'research'}
       ], 'artifact');
-      const proofPath = input('Final artifact path inside Modelmaker data directory');
+      const proofPath = input('Final artifact path inside your profile workspace');
       const proofRow = node('div', '', 'team-task-actions');
       proofType.onchange = () => {proofPath.hidden = proofType.value !== 'artifact';};
       proofRow.append(proofType, proofPath, button('Submit final delivery evidence', async () => {
