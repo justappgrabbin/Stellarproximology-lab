@@ -111,7 +111,7 @@ class TeamControl:
         with self.r.lock, self.db:
             project = self._project(project_id)
             if project["status"] != "active":
-                raise ValueError("Completed projects are immutable")
+                raise ValueError("Projects under delivery review are immutable")
             self.db.execute(
                 "INSERT INTO team_tasks VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (task_id, self.r.user, project_id, title, acceptance,
@@ -187,7 +187,8 @@ class TeamControl:
                 raise ValueError("Artifact is missing or escapes this profile's workspace")
             if path.stat().st_size == 0:
                 raise ValueError("Empty artifact cannot be accepted")
-            actual = hashlib.file_digest(path.open("rb"), "sha256").hexdigest()
+            with path.open("rb") as stream:
+                actual = hashlib.file_digest(stream, "sha256").hexdigest()
             supplied = proof.get("sha256")
             if supplied and supplied != actual:
                 raise ValueError("Artifact SHA-256 mismatch")
@@ -267,15 +268,52 @@ class TeamControl:
                 raise ValueError("Every assigned task must be independently verified first")
             accepted = self._check_proof(proof)
             self.db.execute(
-                "UPDATE team_projects SET status='delivered',completed=?,proof=? "
+                "UPDATE team_projects SET status='awaiting_acceptance',completed=?,proof=? "
                 "WHERE id=? AND user=?",
                 (now(), json.dumps(accepted), project_id, self.r.user))
-            self._notice("delivery", "Delivery available: " + project["title"],
-                         "All registered tasks verified; final " + accepted["verified"] +
-                         " proof recorded. Runtime, installation or user acceptance "
-                         "must be tested separately unless explicitly verified.",
+            self._notice("delivery-review", "Delivery evidence ready: " + project["title"],
+                         "All registered tasks have evidence; final " + accepted["verified"] +
+                         " receipt recorded. The project is awaiting owner acceptance; "
+                         "no runtime or installation success has been assumed.",
                          project_id)
         return self.project(project_id)
+
+
+    def accept_project(self, project_id, approved):
+        """Only an explicit owner-facing action marks a reviewed delivery complete."""
+        if approved is not True:
+            raise ValueError("Owner approval must be explicitly true")
+        with self.r.lock, self.db:
+            project = self._project(project_id)
+            if project["status"] != "awaiting_acceptance" or not project["proof"]:
+                raise ValueError("Project has no verified delivery evidence awaiting acceptance")
+            tasks = self.db.execute(
+                "SELECT state FROM team_tasks WHERE user=? AND project_id=?",
+                (self.r.user, project_id)).fetchall()
+            if not tasks or any(row["state"] != "verified" for row in tasks):
+                raise ValueError("Not all task evidence was accepted")
+            self.db.execute(
+                "UPDATE team_projects SET status='completed',completed=? WHERE id=? AND user=?",
+                (now(), project_id, self.r.user))
+            self._notice("project-accepted", "Project accepted: " + project["title"],
+                         "Owner accepted submitted evidence after review. "
+                         "No unrelated build or installation has been claimed.",
+                         project_id)
+        return self.project(project_id)
+
+    def record_adapter_training(self, receipt):
+        """Record only real persisted TRIDENT adapter revisions."""
+        if not isinstance(receipt, dict) or receipt.get("status") != "adapter-trained-not-validated-for-research-correctness":
+            return
+        position = self._position(receipt.get("trained_position"))
+        revision = receipt.get("revision")
+        if not isinstance(revision, str) or not revision.startswith("revision-"):
+            return
+        with self.r.lock, self.db:
+            self._notice("adapter-revision", position + " adapter weights saved",
+                         "Revision " + revision + " trained and reloaded with the "
+                         "existing shared TRIDENT base. Research correctness and deployment "
+                         "are not established by this training receipt.")
 
     def record_research(self, dimension, result, kind="research"):
         """Notification is sourced only from an actual tool receipt, not a prompt."""
@@ -296,10 +334,17 @@ class TeamControl:
     def feed(self, after=0, limit=100):
         if type(after) is not int or after < 0 or type(limit) is not int or not 1 <= limit <= 100:
             raise ValueError("Invalid notification cursor")
-        rows = self.db.execute(
-            "SELECT * FROM team_notifications WHERE user=? AND id>? ORDER BY id LIMIT ?",
-            (self.r.user, after, limit)).fetchall()
-        return {"notifications": [dict(row) for row in rows], "latest": rows[-1]["id"] if rows else after}
+        # A fresh inbox shows the newest items, while an active poll reads forward.
+        if after == 0:
+            rows = list(reversed(self.db.execute(
+                "SELECT * FROM team_notifications WHERE user=? ORDER BY id DESC LIMIT ?",
+                (self.r.user, limit)).fetchall()))
+        else:
+            rows = self.db.execute(
+                "SELECT * FROM team_notifications WHERE user=? AND id>? ORDER BY id LIMIT ?",
+                (self.r.user, after, limit)).fetchall()
+        return {"notifications": [dict(row) for row in rows],
+                "latest": rows[-1]["id"] if rows else after}
 
     def acknowledge(self, through_id):
         if type(through_id) is not int or through_id < 0:
