@@ -148,8 +148,12 @@ def create_app(directory=None,mount_training=True):
     def desktop():return FileResponse(ROOT/'computer/index.html')
     @app.get('/computer/{asset}')
     def asset(asset:str):
-        if asset not in ('workspace.mjs','workspace.css','team_board.mjs'):raise HTTPException(404)
-        return FileResponse(ROOT/'computer'/asset,media_type='text/javascript' if asset.endswith('mjs') else 'text/css')
+        if asset not in ('workspace.mjs','workspace.css','team_board.mjs','team_notifications_sw.js'):
+            raise HTTPException(404)
+        headers={'Service-Worker-Allowed':'/'} if asset=='team_notifications_sw.js' else {}
+        return FileResponse(ROOT/'computer'/asset,
+            media_type='text/css' if asset.endswith('css') else 'text/javascript',
+            headers=headers)
     @app.get('/api/computer/status')
     def status(request:Request):
         r=runtime(request)
