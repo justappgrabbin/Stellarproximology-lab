@@ -22,3 +22,8 @@ jobs:
       - name: Run source coverage and evidence tests
         working-directory: Modelmaker-repair
         run: python -m unittest discover -s tests -p 'test_dimension_research.py' -v
+      - name: Verify real canonical Klein tools across all four positions
+        working-directory: Modelmaker-repair
+        run: |
+          node --version
+          python -m unittest discover -s tests -p 'test_real_klein_positions.py' -v
