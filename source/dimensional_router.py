@@ -54,11 +54,41 @@ class CrossLink:
     source_explicit: bool = False
 
 
-class DimensionalRouter:
-    """No cross-dimensional link is active without source-explicit evidence."""
+@dataclass(frozen=True)
+class FrameOrder:
+    leader: str
+    order: tuple[str, ...]
+    provenance: str
+    evidence: str
+    source_explicit: bool = False
 
-    def __init__(self, links: tuple[CrossLink, ...] = ()) -> None:
+
+class DimensionalRouter:
+    """No unverified cross-dimensional link or frame order becomes an active rule."""
+
+    def __init__(self, links: tuple[CrossLink, ...] = (),
+                 frame_orders: tuple[FrameOrder, ...] = ()) -> None:
         self.links: dict[tuple[str, str, str, str], CrossLink] = {}
+        self.frame_orders = dict(FRAME_ORDERS)
+        self.frame_order_provenance = {"Being": SOURCE}
+        self.proposed_frame_orders: dict[str, FrameOrder] = {}
+        for item in frame_orders:
+            if item.leader not in DIMENSIONS:
+                raise DimensionalRuleError("Unknown leader dimension")
+            if (not isinstance(item.order, tuple) or len(item.order) != len(DIMENSIONS)
+                    or set(item.order) != set(DIMENSIONS) or item.order[0] != item.leader):
+                raise DimensionalRuleError("Frame order must be a complete five-dimension permutation led by its frame")
+            if not isinstance(item.provenance, str) or not item.provenance.strip():
+                raise DimensionalRuleError("Frame order provenance required")
+            if not isinstance(item.evidence, str) or not item.evidence.strip():
+                raise DimensionalRuleError("Frame order evidence required")
+            if item.leader in self.frame_orders or item.leader in self.proposed_frame_orders:
+                raise DimensionalRuleError("Cannot overwrite or duplicate an existing frame order")
+            if item.source_explicit:
+                self.frame_orders[item.leader] = item.order
+                self.frame_order_provenance[item.leader] = item.provenance
+            else:
+                self.proposed_frame_orders[item.leader] = item
         for link in links:
             self._validate_dimension_word(link.from_dimension, link.from_word)
             self._validate_dimension_word(link.to_dimension, link.to_word)
@@ -113,7 +143,8 @@ class DimensionalRouter:
             status = ("source_defined" if link and link.source_explicit
                       else "proposed_cross_link" if link else "unresolved_cross_link")
         frame_status = ("not_requested" if frame is None else
-                        "source_defined" if frame in FRAME_ORDERS else
+                        "source_defined" if frame in self.frame_orders else
+                        "proposed_order" if frame in self.proposed_frame_orders else
                         "unresolved_order")
         return {
             "from_dimension": dimension,
@@ -126,7 +157,8 @@ class DimensionalRouter:
             "target_index": target_index,
             "frame_dimension": frame,
             "frame_status": frame_status,
-            "frame_order": list(FRAME_ORDERS[frame]) if frame in FRAME_ORDERS else None,
+            "frame_order": list(self.frame_orders[frame]) if frame in self.frame_orders else None,
+            "frame_provenance": self.frame_order_provenance.get(frame),
             "edge_provenance": link.provenance if link else SOURCE if status == "source_defined" else None,
             "axis": AXES[dimension],
         }
@@ -173,7 +205,7 @@ class DimensionalRouter:
             features[27] += 1.0                # 27: supported transitions
             if trace["frame_status"] == "source_defined":
                 features[28] += 1.0            # 28: source-defined frame traversals
-            if trace["frame_status"] == "unresolved_order":
+            if trace["frame_status"] in ("unresolved_order", "proposed_order"):
                 # This counts uncertainty only; it is not a guessed frame order.
                 features[29] += 1.0
         # Reserve 30-31 for a future source-backed rule; keep zero for now.
