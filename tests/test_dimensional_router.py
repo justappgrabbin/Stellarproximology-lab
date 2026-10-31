@@ -5,11 +5,12 @@ import unittest
 from pathlib import Path
 import torch
 
-from source.dimensional_router import (
+import training_core  # Inserts the repository's source/ runtime path, as the app does.
+from dimensional_router import (
     DEFAULT_ROUTER, CHAINS, DIMENSIONS, FRAME_ORDERS, CrossLink,
     DimensionalRouter, DimensionalRuleError,
 )
-from source.semantic_language_maker import semantic_features
+from semantic_language_maker import semantic_features
 
 
 class StructuralRoutingTests(unittest.TestCase):
@@ -125,7 +126,7 @@ class StructuralRoutingTests(unittest.TestCase):
             semantic_features("anything", dimension_events=[event])
 
     def test_real_gradient_step_accepts_structurally_annotated_training(self):
-        from source.semantic_language_maker import NeuralMaker
+        from semantic_language_maker import NeuralMaker
         maker = NeuralMaker()
         record = {"prompt": "How do you create?",
                   "response": "Through a documented transformation.",
