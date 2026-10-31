@@ -274,6 +274,14 @@ class DimensionResearch:
                 'tool_analysis_not_neural_training':True,'attempts':attempts,
                 'coverage':self.status()['dimensions'][dimension]}
 
+    def observe_all_klein(self, max_passages_per_position=5, tool_runner=None):
+        """One request advances all four positions through the same source pool."""
+        outputs = {dim:self.observe_klein(dim,max_passages_per_position,tool_runner=tool_runner)
+                   for dim in sorted(DIMENSIONS)}
+        return {'mode':'four-shared-source-klein-positions','results':outputs,
+                'status':self.status(),'comparison':self.compare(max_passages=100),
+                'note':'All four used their own persistent Klein state. Source traversal, neural training and theoretical verification are distinct.'}
+
     def compare(self, document_id=None, max_passages=100):
         """Compare positions for identical source spans; preserve disagreement."""
         self._sync_shared()
@@ -484,7 +492,7 @@ def main():
     import argparse
     from .runtime import Assembly
     p = argparse.ArgumentParser(description='Modelmaker: dimension researchers, assigned-source complete reading')
-    p.add_argument('command', choices=['sources','configure','status','run','export','compare','klein'])
+    p.add_argument('command', choices=['sources','configure','status','run','export','compare','klein','klein-all'])
     p.add_argument('--manifest', help='JSON with {"assignments": [four explicit assignments]}')
     p.add_argument('--dimension', choices=sorted(DIMENSIONS))
     p.add_argument('--max-passages', type=int, default=1)
@@ -501,6 +509,8 @@ def main():
                 p.error('configure requires --manifest')
             manifest = json.loads(Path(a.manifest).read_text(encoding='utf-8'))
             result = team.configure_shared(manifest['positions'])
+        elif a.command == 'klein-all':
+            result = team.observe_all_klein(a.max_passages)
         elif a.command == 'klein':
             if not a.dimension:
                 p.error('klein requires --dimension')
