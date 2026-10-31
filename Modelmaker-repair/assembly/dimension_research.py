@@ -144,20 +144,31 @@ class DimensionResearch:
         with self.runtime.lock, self.db:
             self.db.execute("""CREATE TABLE IF NOT EXISTS dimension_team_config
                 (user TEXT PRIMARY KEY,source_policy TEXT NOT NULL)""")
-            self.db.execute('DELETE FROM dimension_assignments WHERE user=?',(self.runtime.user,))
-            self.db.execute('DELETE FROM dimension_passage_research WHERE user=?',(self.runtime.user,))
-            self.db.execute('DELETE FROM dimension_klein_observations WHERE user=?',(self.runtime.user,))
-            self.db.execute('INSERT OR REPLACE INTO dimension_team_config VALUES(?,?)',
-                            (self.runtime.user,'all-indexed-sources-shared'))
+            old = {r['dimension']:(r['checkpoint'],r['instructions']) for r in self.db.execute(
+                """SELECT dimension,checkpoint,instructions FROM dimension_assignments
+                    WHERE user=? AND document_id='__POSITION__'""",(self.runtime.user,)).fetchall()}
+            requested = {}
             for x in positions:
                 dim = x['dimension']
-                # No fixed interpretations are invented for the four positions.
                 instruction = x.get('instructions') or (
                     'Observe this shared source from the '+dim+' position; report original evidence '
                     'and how the position changes your questions without assuming a definition.')
-                self.db.execute("""INSERT INTO dimension_assignments
-                    (user,dimension,checkpoint,document_id,instructions,source_sha)
-                    VALUES(?,?,?,?,?,?)""",(self.runtime.user,dim,x.get('checkpoint'),'__POSITION__',instruction,''))
+                requested[dim]=(x.get('checkpoint'),instruction)
+            for dim in DIMENSIONS:
+                if old.get(dim) != requested[dim]:
+                    # A changed position must not reuse its old research conclusions.
+                    self.db.execute('DELETE FROM dimension_assignments WHERE user=? AND dimension=?',
+                                    (self.runtime.user,dim))
+                    self.db.execute('DELETE FROM dimension_passage_research WHERE user=? AND dimension=?',
+                                    (self.runtime.user,dim))
+                    self.db.execute('DELETE FROM dimension_klein_observations WHERE user=? AND dimension=?',
+                                    (self.runtime.user,dim))
+                    self.db.execute("""INSERT INTO dimension_assignments
+                        (user,dimension,checkpoint,document_id,instructions,source_sha)
+                        VALUES(?,?,?,?,?,?)""",
+                        (self.runtime.user,dim,requested[dim][0],'__POSITION__',requested[dim][1],''))
+            self.db.execute('INSERT OR REPLACE INTO dimension_team_config VALUES(?,?)',
+                            (self.runtime.user,'all-indexed-sources-shared'))
         return self.status()
 
     def _sync_shared(self):
@@ -209,7 +220,12 @@ class DimensionResearch:
         work = self._assignments(dimension)
         if not work:
             raise ValueError('Import text sources into shared Modelmaker collection first')
-        position_key = 'p' + hashlib.sha256((self.runtime.user+'|'+dimension).encode()).hexdigest()[:32]
+        # Position generation changes when its checkpoint or lens changes.
+        lens = self.db.execute("""SELECT checkpoint,instructions FROM dimension_assignments
+            WHERE user=? AND dimension=? AND document_id='__POSITION__'""",
+            (self.runtime.user,dimension)).fetchone()
+        position_identity = self.runtime.user+'|'+dimension+'|'+str(tuple(lens) if lens else ())
+        position_key = 'p'+hashlib.sha256(position_identity.encode()).hexdigest()[:32]
         attempts = []
         for a,doc,start,end,passage in self._work_items(dimension):
             prev = self.db.execute("""SELECT status,passage_sha FROM dimension_klein_observations
