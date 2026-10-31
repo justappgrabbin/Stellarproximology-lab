@@ -137,6 +137,12 @@ class DimensionResearch:
             for start, end, passage in spans(doc['text']):
                 yield a, doc, start, end, passage
 
+    def sources(self):
+        """List indexed source IDs available to this profile, without guessing assignments."""
+        return [dict(row) for row in self.db.execute(
+            'SELECT id,title,source,kind,length(text) AS characters FROM documents WHERE user=? ORDER BY created,title',
+            (self.runtime.user,)).fetchall()]
+
     def status(self):
         result = {}
         for dimension in sorted(DIMENSIONS):
@@ -254,7 +260,7 @@ def main():
     import argparse
     from .runtime import Assembly
     p = argparse.ArgumentParser(description='Modelmaker: dimension researchers, assigned-source complete reading')
-    p.add_argument('command', choices=['configure','status','run','export'])
+    p.add_argument('command', choices=['sources','configure','status','run','export'])
     p.add_argument('--manifest', help='JSON with {"assignments": [four explicit assignments]}')
     p.add_argument('--dimension', choices=sorted(DIMENSIONS))
     p.add_argument('--max-passages', type=int, default=1)
@@ -264,7 +270,9 @@ def main():
     with_assembly = Assembly(a.data, a.user)
     try:
         team = DimensionResearch(with_assembly)
-        if a.command == 'configure':
+        if a.command == 'sources':
+            result = team.sources()
+        elif a.command == 'configure':
             if not a.manifest:
                 p.error('configure requires --manifest')
             result = team.configure(json.loads(Path(a.manifest).read_text(encoding='utf-8'))['assignments'])
