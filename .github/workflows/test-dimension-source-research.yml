@@ -1,0 +1,46 @@
+name: Dimension source research tests
+
+on:
+  push:
+    branches:
+      - feature/dimension-source-research-team
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile research module
+        run: python -m py_compile Modelmaker-repair/assembly/dimension_research.py Modelmaker-repair/assembly/desktop_server.py
+      - name: Verify private UI JavaScript and Klein bridge syntax
+        run: |
+          node --check Modelmaker-repair/computer/workspace.mjs
+          node --check Modelmaker-repair/assembly/klein_runner.mjs
+      - name: Verify all native TRIDENT team controls are present
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('Modelmaker-repair/computer/index.html').read_text()
+          js=Path('Modelmaker-repair/computer/workspace.mjs').read_text()
+          controls=['trident-tab','team-configure','team-klein','trident-base',
+                    'trident-position','trident-train','trident-heldout',
+                    'trident-train-button','trident-compare']
+          for name in controls:
+            assert 'id="'+name+'"' in html, name
+            assert "'"+name+"'" in js, name
+          PY
+      - name: Run source coverage and evidence tests
+        working-directory: Modelmaker-repair
+        run: python -m unittest discover -s tests -p 'test_dimension_research.py' -v
+      - name: Verify real canonical Klein tools across all four positions
+        working-directory: Modelmaker-repair
+        run: |
+          node --version
+          python -m unittest discover -s tests -p 'test_real_klein_positions.py' -v

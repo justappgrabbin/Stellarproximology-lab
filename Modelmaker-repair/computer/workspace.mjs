@@ -38,8 +38,8 @@ $('run-tool').onclick=()=>job($('run-tool'),async()=>showResult('tool-result',aw
 $('watch').onclick=()=>job($('watch'),async()=>showResult('tool-result',await api('watch')),'tool-result');
 try{const status=await api('status');showResult('status',status.model_loaded?'Local CPU model loaded · Klein tools connected':'Klein tools connected · load a checkpoint for model inference');if(status.checkpoint)$('checkpoint').value=status.checkpoint;showResult('terminal-result',status.terminal_enabled?'Linux computer ready.':'Start the Linux container to use terminal commands.');for(const tool of await api('tools')){const option=document.createElement('option');option.value=tool.id;option.textContent=tool.id;$('tool').append(option);}globalThis.ModelmakerWorkspace={api,hand,status};}catch(e){showResult('status',e.message);}
 // Private-chat books and reviewable self-editing.
-function view(id){for(const name of ['workspace','toolbox','self-editor'])$(name).hidden=name!==id;for(const[name,target]of [['workspace-tab','workspace'],['klein-tab','toolbox'],['edit-tab','self-editor']])$(name).classList.toggle('active',id===target);}
-$('workspace-tab').onclick=()=>view('workspace');$('klein-tab').onclick=()=>view('toolbox');$('edit-tab').onclick=()=>view('self-editor');
+function view(id){for(const name of ['workspace','toolbox','trident-team','self-editor'])$(name).hidden=name!==id;for(const[name,target]of [['workspace-tab','workspace'],['klein-tab','toolbox'],['trident-tab','trident-team'],['edit-tab','self-editor']])$(name).classList.toggle('active',id===target);}
+$('workspace-tab').onclick=()=>view('workspace');$('klein-tab').onclick=()=>view('toolbox');$('edit-tab').onclick=()=>view('self-editor');$('trident-tab').onclick=()=>view('trident-team');
 $('books-form').onsubmit=e=>{e.preventDefault();job($('upload-books'),async()=>{const form=new FormData();for(const file of $('books').files)form.append('files',file);showResult('books-result','Importing files and studying supported content…');const response=await fetch('/api/computer/books',{method:'POST',body:form,credentials:'same-origin'});if(!response.ok)throw Error(await response.text());const result=await response.json();$('books-result').replaceChildren();for(const book of result.books){const line=document.createElement('p');line.textContent=book.ok?book.file+' · '+(book.status==='project-imported'?'project imported · '+book.entries.length+' files':book.entries?.[0]?.status==='studied'?'text studied':book.status)+' · '+(book.analysis==='studied'?'ready for retrieval':book.analysis==='partial'?'some content retained without analysis':book.error??'original retained'):book.file+': '+book.error;$('books-result').append(line);}const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='Study details';pre.textContent=JSON.stringify(result,null,2);details.append(summary,pre);$('books-result').append(details);},'books-result');};
 let editHash=null,editName=null,proposalId=null;
 function proposal(value){proposalId=value.id;showResult('edit-diff',value.diff);$('edit-apply').disabled=false;showResult('edit-result','Review the diff, then apply if it reflects your requested change.');}
@@ -51,3 +51,36 @@ $('edit-apply').onclick=()=>job($('edit-apply'),async()=>{if(!proposalId)throw E
 try{for(const name of await api('edit/files')){const option=document.createElement('option');option.value=name;option.textContent=name;$('edit-file').append(option);}}catch(e){showResult('edit-result',e.message);}
 $('install-coder').onclick=()=>job($('install-coder'),async()=>{let state=await api('coding/install',{});showResult('status','Installing the coding model locally. Initial download is about 1 GB.');while(['downloading','loading'].includes(state.status)){await new Promise(resolve=>setTimeout(resolve,2000));state=await api('coding/status');showResult('status',state.status==='loading'?'Loading coding weights on CPU…':'Downloading coding model…');}if(state.status!=='ready')throw Error(state.error??'Checkpoint installation did not complete');$('checkpoint').value=state.path;showResult('status','Qwen coding model loaded on CPU · Klein tools connected');});
 $('uploaded-files').onclick=()=>job($('uploaded-files'),async()=>{const files=await api('uploads');$('uploads-list').replaceChildren();for(const upload of files){const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent=upload.file+' · '+upload.status;details.append(summary);const download=document.createElement('a');download.href='/api/computer/uploads/'+upload.id+'/original';download.textContent='Download original';download.setAttribute('download','');details.append(download);for(const entry of upload.entries??[]){const row=document.createElement('div');row.className='upload-entry';const label=document.createElement('span');const labels={'studied':'Text studied','indexed-awaiting-study':'Text available · study pending','retained-binary':'File stored · no text analysis','retained-not-indexed':'File stored · not indexed','retained-not-expanded':'Archive stored','retained-analysis-unavailable':'File stored · analysis unavailable'};label.textContent=entry.path+' · '+(labels[entry.status]??entry.status);row.append(label);if(['studied','indexed-awaiting-study'].includes(entry.status)){const button=document.createElement('button');button.textContent='View text';button.onclick=()=>job(button,async()=>{const result=await api('uploads/'+upload.id+'/text?name='+encodeURIComponent(entry.path));$('uploaded-preview').hidden=false;showResult('uploaded-preview',result.text);},'books-result');row.append(button);}details.append(row);}$('uploads-list').append(details);}if(!files.length)showResult('uploads-list','No uploaded files in this browser profile yet.');},'books-result');
+
+function jsonlRecords(value){
+ const lines=value.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean);
+ if(!lines.length)throw Error('Paste reviewed, owner-approved JSONL records and a separate held-out set.');
+ return lines.map((line,index)=>{try{return JSON.parse(line);}catch(e){throw Error('Invalid JSONL at line '+(index+1)+': '+e.message);}});
+}
+function requiredBase(){
+ const path=$('trident-base').value.trim();
+ if(!path)throw Error('Choose a real trained native TRIDENT checkpoint directory; no dummy weights are supplied.');
+ return path;
+}
+$('team-configure').onclick=()=>job($('team-configure'),async()=>{
+ const manifest=JSON.parse($('team-config').value);
+ showResult('team-source-status',await api('research-team/configure',manifest));
+},'team-source-status');
+$('team-klein').onclick=()=>job($('team-klein'),async()=>{
+ showResult('team-source-status',await api('research-team/klein-all',{max_passages_per_position:5}));
+},'team-source-status');
+$('trident-status').onclick=()=>job($('trident-status'),async()=>{
+ showResult('trident-base-status',await api('research-team/trident/status?base_checkpoint='+encodeURIComponent(requiredBase())));
+},'trident-base-status');
+$('trident-train-button').onclick=()=>job($('trident-train-button'),async()=>{
+ const payload={base_checkpoint:requiredBase(),dimension:$('trident-position').value,
+    examples:jsonlRecords($('trident-train').value),heldout:jsonlRecords($('trident-heldout').value),
+    steps:Number($('trident-steps').value)};
+ showResult('trident-train-result',await api('research-team/trident/train',payload));
+},'trident-train-result');
+$('trident-compare').onclick=()=>job($('trident-compare'),async()=>{
+ const prompt=$('trident-prompt').value.trim();
+ if(!prompt)throw Error('Enter a question to compare across the four positions.');
+ showResult('trident-compare-result',await api('research-team/trident/compare',
+     {base_checkpoint:requiredBase(),prompt,max_new_bytes:64}));
+},'trident-compare-result');

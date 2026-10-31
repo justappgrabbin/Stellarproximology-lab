@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { SynthiaAutomata } from '../vendor/klein/engine/synthia.js';
 import { SOURCE_TOOL_CLASSES } from './klein_source_tools.mjs';
+import { DIMENSION_CHAINS, projectDimension } from '../vendor/klein/state-space/dimensions.js';
+import { CANON_DIMENSION_CHAINS } from '../vendor/klein/state-space/dimension-canon.js';
 
 const root=path.resolve(process.argv[2]??'.modelmaker/klein');fs.mkdirSync(root,{recursive:true});
 const engines=new Map();
@@ -45,6 +47,22 @@ function invoke(e,id,input){
 async function handle(packet){
  const user=packet.user??'local',e=engine(user);
  if(packet.operation==='catalog')return e.tools.map(t=>({id:t.id,capabilities:t.capabilities,dimension:t.dimension,kleinWrapped:!!e.klein.operator(t.id)}));
+ if(packet.operation==='project'){
+  // A native projection. The behavioral chains and handoff source crystal
+  // chains are distinct artifacts with an unresolved contract conflict.
+  const dimension=packet.dimension;
+  if(!Object.hasOwn(DIMENSION_CHAINS,dimension))throw new TypeError('unknown dimensional position');
+  if(!['Movement','Evolution','Being','Design'].includes(dimension))throw new TypeError('research position requires one of the four assigned dimensions');
+  if(typeof packet.sourceIdentity!=='string'||!packet.sourceIdentity.trim())throw new TypeError('sourceIdentity must be nonempty');
+  if(typeof packet.sourceHash!=='string'||!/^[a-f0-9]{64}$/.test(packet.sourceHash))throw new TypeError('sourceHash must be sha256');
+  const projection=projectDimension({identity:packet.sourceIdentity,sourceHash:packet.sourceHash},null,dimension);
+  return {position:dimension,sourceIdentity:packet.sourceIdentity,sourceHash:packet.sourceHash,
+    projection,behavioralChain:DIMENSION_CHAINS[dimension],
+    sourceCrystalChain:CANON_DIMENSION_CHAINS[dimension],
+    chainInterpretation:'two preserved source artifacts; known unresolved chain conflict',
+    provenance:['state-space/dimensions.js','state-space/dimension-canon.js'],
+    noAutomaticCanonPromotion:true};
+ }
  if(packet.operation==='invoke'){
   const result=invoke(e,packet.tool,packet.input??{});save(user,e);return result;
  }
