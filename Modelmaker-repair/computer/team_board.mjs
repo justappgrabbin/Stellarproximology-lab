@@ -187,15 +187,33 @@ function renderFeed(notices, unread) {
   byId('team-unread').textContent = unread + ' unread';
   byId('team-bell-count').textContent = unread > 0 ? ' (' + unread + ')' : '';
 }
+let notificationRegistration = null;
+async function getNotificationRegistration() {
+  if (!('serviceWorker' in navigator)) return null;
+  if (!notificationRegistration) {
+    notificationRegistration = await navigator.serviceWorker.register(
+      '/computer/team_notifications_sw.js', {scope: '/'});
+  }
+  return notificationRegistration;
+}
 async function notifyNewEvents(fresh) {
   if (!browserAlerts || !('Notification' in window) || Notification.permission !== 'granted') return;
   for (const event of fresh) {
     if (event.kind === 'assignment' || event.kind === 'delegation') continue;
-    // Browsers may suppress OS alerts. Persistence remains server-side.
-    const notice = new Notification('Modelmaker: ' + event.title, {
-      body: event.detail, tag: 'modelmaker-team-' + event.id
-    });
-    notice.onclick = () => {window.focus(); byId('team-board-tab').click(); notice.close();};
+    try {
+      const title = 'Modelmaker: ' + event.title;
+      const options = {body:event.detail, tag:'modelmaker-team-' + event.id};
+      const service = await getNotificationRegistration();
+      if (service) {
+        // Android Chromium requires registration.showNotification, not new Notification().
+        await service.showNotification(title, options);
+      } else {
+        const notice = new Notification(title, options);
+        notice.onclick = () => {window.focus(); byId('team-board-tab').click(); notice.close();};
+      }
+    } catch (error) {
+      message('Notification saved to inbox, but OS alert could not display: ' + error.message, true);
+    }
   }
 }
 async function reload() {
@@ -261,6 +279,7 @@ byId('team-enable-notifications').onclick = async () => {
   }
   const permission = await Notification.requestPermission();
   browserAlerts = permission === 'granted';
+  if (browserAlerts) {try {await getNotificationRegistration();} catch (err) {message('Notifications permission granted; service-worker registration failed: ' + err.message, true);}}
   message(browserAlerts
     ? 'Notifications enabled while this workspace stays open. Android background alerts require a native bridge.'
     : 'Notification permission not granted. All events remain in the local notification inbox.',
