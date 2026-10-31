@@ -215,6 +215,10 @@ def create_app(directory=None,mount_training=True):
     def research_run(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
         return DimensionResearch(runtime(request)).run(body.dimension,body.max_passages)
+    @app.post('/api/computer/research-team/klein')
+    def research_klein(body:DimensionWork,request:Request):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).observe_klein(body.dimension,body.max_passages)
     @app.get('/api/computer/research-team/compare')
     def research_compare(request:Request,document_id:str|None=None):
         from .dimension_research import DimensionResearch
