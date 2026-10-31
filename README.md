@@ -73,8 +73,9 @@ channels. Nothing changes for datasets or inference requests without
 `dimension_events`. The model continues to learn with its existing weight
 updates; this feature does **not** implement the unfinished Klein learning laws.
 
-Each of Movement, Evolution, Being, Design, and Space has its **own directed
-source-word chain**. The current source documents provide one full leading
+Each of Movement, Evolution, Being, Design, and Space has its **own source-word
+ordering**. An adjacent pair is represented as an *ordered chain adjacency*,
+**not a demonstrated causal state transformation**. No causal rule is inferred. The current source documents provide one full leading
 *interdimensional traversal order*: **Being → Movement → Space → Design →
 Evolution**. Leading orders for the other four are **unresolved**, not default
 rotations. The source material also distinguishes four originating dimensions
@@ -89,8 +90,9 @@ An approved training JSONL record can include:
 
 The local `/v1/chat/completions` endpoint accepts the same optional
 top-level `dimension_events` array; the Sample tab exposes an optional JSON
-field. The full supported edge is validated before an event becomes a model
-feature. For example, `Seeing → Illusion` has **no verified cross-dimensional
+field. The structural adjacency is validated before an event becomes a model
+feature. If a `frame_dimension` is requested but its frame-leading order is
+unresolved, encoding **fails closed** rather than silently using another order. For example, `Seeing → Illusion` has **no verified cross-dimensional
 edge** in these source chains, so the router rejects it rather than inventing
 one. Frame orders must have an explicit source and evidence before activation.
 
@@ -105,3 +107,9 @@ python -m unittest discover -s tests -v
 
 The original `Modelmaker-repair/` implementation, external research branches,
 and their original Klein tools are not modified by this change.
+
+The existing separate `feature/dimension-source-research-team` branch uses one frozen
+native TRIDENT with four independently trained Klein positional adapters. This
+PR does **not** replace or merge those adapters. Future integration must preserve
+the original 8×32 conditioning interface and compare the two paths on the same
+source-anchored inputs, rather than creating competing backbones.

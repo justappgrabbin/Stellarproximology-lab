@@ -37,6 +37,7 @@ jobs:
                   assert DEFAULT_ROUTER.route({"dimension": dim, "from": a, "to": b})["supported"]
                   count += 1
           assert count == 24, count
+          assert not DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation"})["causal_transition_verified"]
           event={"dimension":"Movement","from":"Seeing","to_dimension":"Space","to":"Illusion"}
           assert DEFAULT_ROUTER.route(event)["status"] == "unresolved_cross_link"
           try:
@@ -46,6 +47,11 @@ jobs:
               pass
           assert tuple(DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Being"})["frame_order"]) == FRAME_ORDERS["Being"]
           assert DEFAULT_ROUTER.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Space"})["frame_order"] is None
+          try:
+              DEFAULT_ROUTER.encode([{"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Space"}])
+              raise AssertionError("Unknown leading order admitted for training")
+          except DimensionalRuleError:
+              pass
           rule=FrameOrder("Movement", ("Movement","Being","Evolution","Design","Space"), "test-source", "test-evidence", True)
           custom=DimensionalRouter(frame_orders=(rule,))
           assert custom.route({"dimension":"Movement","from":"Energy","to":"Creation","frame_dimension":"Movement"})["frame_order"] == list(rule.order)

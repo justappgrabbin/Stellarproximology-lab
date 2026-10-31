@@ -22,7 +22,9 @@ class StructuralRoutingTests(unittest.TestCase):
             for a, b in zip(chain, chain[1:]):
                 result = DEFAULT_ROUTER.route({"dimension": dimension, "from": a, "to": b})
                 self.assertTrue(result["supported"], f"{dimension} {a}->{b}")
-                self.assertEqual(result["status"], "source_defined")
+                self.assertEqual(result["status"], "source_chain_adjacent")
+                self.assertFalse(result["causal_transition_verified"])
+                self.assertEqual(result["relation_kind"], "ordered_chain_adjacency")
 
     def test_non_edges_reversed_and_skipped_steps_are_rejected(self):
         for event in (
@@ -167,6 +169,23 @@ class StructuralRoutingTests(unittest.TestCase):
         sampled = maker.generate("creation?", seed=9, max_new_bytes=2,
             features={"dimension_events": record["dimension_events"]})
         self.assertTrue(sampled["ready"])
+
+    def test_ordered_chain_does_not_claim_causal_law(self):
+        record = DEFAULT_ROUTER.route({"dimension": "Evolution", "from": "Memory", "to": "Taste"})
+        self.assertEqual(record["status"], "source_chain_adjacent")
+        self.assertEqual(record["source_attestation"], "provided_chain_order")
+        self.assertIsNone(record["transition_rule"])
+        self.assertFalse(record["causal_transition_verified"])
+
+    def test_missing_frame_order_cannot_be_encoded_or_walked(self):
+        event = {"dimension": "Design", "from": "Structure", "to": "Progress",
+                 "frame_dimension": "Design"}
+        trace = DEFAULT_ROUTER.route(event)
+        self.assertEqual(trace["frame_status"], "unresolved_order")
+        with self.assertRaisesRegex(DimensionalRuleError, "unverified leading order"):
+            DEFAULT_ROUTER.encode([event])
+        with self.assertRaisesRegex(DimensionalRuleError, "unverified leading order"):
+            DEFAULT_ROUTER.walk("Design", ["Structure", "Progress"], "Design")
 
     def test_jsonl_rejects_wrong_edge_and_preserves_valid_row(self):
         from training_core import _jsonl
