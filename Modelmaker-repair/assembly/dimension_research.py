@@ -82,6 +82,11 @@ class DimensionResearch:
                     passage_end INTEGER, passage_sha TEXT, status TEXT,
                     observations_json TEXT, raw_output TEXT, error TEXT, updated TEXT,
                     PRIMARY KEY(user,dimension,document_id,passage_start));
+                CREATE TABLE IF NOT EXISTS dimension_klein_observations (
+                    user TEXT, dimension TEXT, document_id TEXT, passage_start INTEGER,
+                    passage_end INTEGER, passage_sha TEXT, status TEXT,
+                    output_json TEXT, error TEXT, updated TEXT,
+                    PRIMARY KEY(user,dimension,document_id,passage_start));
             """)
 
     def configure(self, assignments):
@@ -141,6 +146,7 @@ class DimensionResearch:
                 (user TEXT PRIMARY KEY,source_policy TEXT NOT NULL)""")
             self.db.execute('DELETE FROM dimension_assignments WHERE user=?',(self.runtime.user,))
             self.db.execute('DELETE FROM dimension_passage_research WHERE user=?',(self.runtime.user,))
+            self.db.execute('DELETE FROM dimension_klein_observations WHERE user=?',(self.runtime.user,))
             self.db.execute('INSERT OR REPLACE INTO dimension_team_config VALUES(?,?)',
                             (self.runtime.user,'all-indexed-sources-shared'))
             for x in positions:
@@ -183,10 +189,64 @@ class DimensionResearch:
                                     (self.runtime.user,dim,doc_id))
                     self.db.execute('DELETE FROM dimension_passage_research WHERE user=? AND dimension=? AND document_id=?',
                                     (self.runtime.user,dim,doc_id))
+                    self.db.execute('DELETE FROM dimension_klein_observations WHERE user=? AND dimension=? AND document_id=?',
+                                    (self.runtime.user,dim,doc_id))
             for (dim,doc_id),spec in desired.items():
                 if current.get((dim,doc_id)) != spec:
                     self.db.execute('INSERT INTO dimension_assignments VALUES(?,?,?,?,?,?)',
                                     (self.runtime.user,dim,spec[0],doc_id,spec[1],spec[2]))
+
+    def observe_klein(self, dimension, max_passages=1, tool_runner=None):
+        """Use the EXISTING Klein automata, isolated by position and shared by source.
+
+        This is native source analysis, not neural training and not a replacement
+        for detailed source reading. Every tool receipt is saved independently.
+        """
+        if dimension not in DIMENSIONS:
+            raise ValueError('Unknown dimension')
+        if not isinstance(max_passages,int) or not 1 <= max_passages <= 100:
+            raise ValueError('max_passages must be 1..100')
+        work = self._assignments(dimension)
+        if not work:
+            raise ValueError('Import text sources into shared Modelmaker collection first')
+        position_key = 'p' + hashlib.sha256((self.runtime.user+'|'+dimension).encode()).hexdigest()[:32]
+        attempts = []
+        for a,doc,start,end,passage in self._work_items(dimension):
+            prev = self.db.execute("""SELECT status,passage_sha FROM dimension_klein_observations
+                WHERE user=? AND dimension=? AND document_id=? AND passage_start=?""",
+                (self.runtime.user,dimension,a['document_id'],start)).fetchone()
+            if prev and prev['status']=='processed' and prev['passage_sha']==_hash(passage):
+                continue
+            if len(attempts)>=max_passages:
+                break
+            output = None
+            error = None
+            state = 'failed'
+            try:
+                if tool_runner is not None:
+                    output = tool_runner(position_key,passage,f"{a['document_id']}:{start}-{end}")
+                else:
+                    output = self.runtime.bridge.request('study',user=position_key,text=passage,
+                        source=f"{a['document_id']}:{start}-{end}")
+                outputs = output.get('outputs') if isinstance(output,dict) else None
+                if not isinstance(outputs,list) or not outputs:
+                    raise ValueError('Existing Klein tool pipeline did not return an analysis receipt')
+                if any(not x.get('accepted') for x in outputs if isinstance(x,dict)):
+                    raise ValueError('Klein study contains rejected tool evaluations')
+                state = 'processed'
+            except Exception as exc:
+                error = str(exc)
+            with self.runtime.lock,self.db:
+                self.db.execute("""INSERT OR REPLACE INTO dimension_klein_observations
+                    VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                    (self.runtime.user,dimension,a['document_id'],start,end,_hash(passage),
+                     state,json.dumps(output,ensure_ascii=False,default=str) if output is not None else None,
+                     error,datetime.now(timezone.utc).isoformat()))
+            attempts.append({'source_id':a['document_id'],'range':[start,end],
+                             'state':state,'error':error})
+        return {'dimension':dimension,'klein_position_key':position_key,
+                'tool_analysis_not_neural_training':True,'attempts':attempts,
+                'coverage':self.status()['dimensions'][dimension]}
 
     def compare(self, document_id=None, max_passages=100):
         """Compare positions for identical source spans; preserve disagreement."""
@@ -208,6 +268,24 @@ class DimensionResearch:
                                'range':[r['passage_start'],r['passage_end']],'positions':{}}
             groups[key]['positions'][r['dimension']] = {
                 'status':r['status'],'observations':json.loads(r['observations_json'] or '[]')}
+        klein_rows=self.db.execute("""SELECT dimension,document_id,passage_start,passage_end,
+            status,error,output_json FROM dimension_klein_observations WHERE user=?
+            ORDER BY document_id,passage_start,dimension""",(self.runtime.user,)).fetchall()
+        for r in klein_rows:
+            if document_id is not None and r['document_id']!=document_id:
+                continue
+            key=(r['document_id'],r['passage_start'],r['passage_end'])
+            if key not in groups:
+                doc=self.db.execute('SELECT title,source FROM documents WHERE id=? AND user=?',
+                                    (r['document_id'],self.runtime.user)).fetchone()
+                if doc:
+                    groups[key]={'document_id':r['document_id'],'source':doc['source'],'title':doc['title'],
+                                 'range':[r['passage_start'],r['passage_end']],'positions':{}}
+            if key in groups:
+                item=groups[key]['positions'].setdefault(r['dimension'],{'status':'unread','observations':[]})
+                item['klein_status']=r['status']
+                item['klein_error']=r['error']
+                item['klein_receipt']=json.loads(r['output_json']) if r['output_json'] else None
         compared = []
         for k,g in list(groups.items())[:max_passages]:
             for dim in sorted(DIMENSIONS):
@@ -258,6 +336,16 @@ class DimensionResearch:
                                     'passages_total': 0, 'passages_verified': 0, 'passages_needing_review': 0})
                 source = sources[-1]
                 source['passages_total'] += 1
+                source.setdefault('klein_passages_processed',0)
+                source.setdefault('klein_passages_failed',0)
+                kr = self.db.execute("""SELECT status,passage_sha FROM dimension_klein_observations
+                    WHERE user=? AND dimension=? AND document_id=? AND passage_start=?""",
+                    (self.runtime.user,dimension,key,start)).fetchone()
+                if kr and kr['passage_sha']==_hash(passage):
+                    if kr['status']=='processed':
+                        source['klein_passages_processed'] += 1
+                    else:
+                        source['klein_passages_failed'] += 1
                 r = self.db.execute('SELECT status,passage_sha FROM dimension_passage_research WHERE user=? AND dimension=? AND document_id=? AND passage_start=?',
                                     (self.runtime.user, dimension, key, start)).fetchone()
                 if r and r['passage_sha'] == _hash(passage):
@@ -269,7 +357,10 @@ class DimensionResearch:
             done = sum(x['passages_verified'] for x in sources)
             result[dimension] = {'sources': sources, 'passages_total': total,
                                  'passages_verified': done, 'passages_remaining': total-done,
-                                 'traversal_complete': bool(sources) and total == done}
+                                 'traversal_complete': bool(sources) and total == done,
+                                 'klein_passages_processed':sum(x['klein_passages_processed'] for x in sources),
+                                 'klein_passages_failed':sum(x['klein_passages_failed'] for x in sources),
+                                 'klein_is_not_neural_training':True}
         return {'team': 'Klein dimension source research', 'research_job': 'comprehensive assigned-source collection',
                 'not_the_job': ['primitive extraction','dimension judging','prediction benchmarking'],
                 'dimensions': result}
@@ -367,7 +458,7 @@ def main():
     import argparse
     from .runtime import Assembly
     p = argparse.ArgumentParser(description='Modelmaker: dimension researchers, assigned-source complete reading')
-    p.add_argument('command', choices=['sources','configure','status','run','export','compare'])
+    p.add_argument('command', choices=['sources','configure','status','run','export','compare','klein'])
     p.add_argument('--manifest', help='JSON with {"assignments": [four explicit assignments]}')
     p.add_argument('--dimension', choices=sorted(DIMENSIONS))
     p.add_argument('--max-passages', type=int, default=1)
@@ -384,6 +475,10 @@ def main():
                 p.error('configure requires --manifest')
             manifest = json.loads(Path(a.manifest).read_text(encoding='utf-8'))
             result = team.configure_shared(manifest['positions'])
+        elif a.command == 'klein':
+            if not a.dimension:
+                p.error('klein requires --dimension')
+            result = team.observe_klein(a.dimension,a.max_passages)
         elif a.command == 'run':
             if not a.dimension:
                 p.error('run requires --dimension')
