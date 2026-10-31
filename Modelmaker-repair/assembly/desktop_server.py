@@ -215,6 +215,11 @@ def create_app(directory=None,mount_training=True):
     def research_run(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
         return DimensionResearch(runtime(request)).run(body.dimension,body.max_passages)
+    @app.post('/api/computer/research-team/klein-all')
+    def research_klein_all(body:dict,request:Request):
+        from .dimension_research import DimensionResearch
+        maximum=body.get('max_passages_per_position',5)
+        return DimensionResearch(runtime(request)).observe_all_klein(maximum)
     @app.post('/api/computer/research-team/klein')
     def research_klein(body:DimensionWork,request:Request):
         from .dimension_research import DimensionResearch
