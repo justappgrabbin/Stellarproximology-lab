@@ -26,6 +26,11 @@ class Checkpoint(BaseModel):
 class Tool(BaseModel):
     tool:str=Field(min_length=1,max_length=100)
     arguments:dict=Field(default_factory=dict)
+class DimensionPlan(BaseModel):
+    assignments:list[dict]=Field(min_length=4,max_length=4)
+class DimensionWork(BaseModel):
+    dimension:str
+    max_passages:int=Field(default=1,ge=1,le=100)
 class Source(BaseModel):
     text:str=Field(min_length=1,max_length=192000)
     title:str=Field(default='Workspace source',max_length=500)
@@ -191,6 +196,29 @@ def create_app(directory=None,mount_training=True):
     @app.get('/api/computer/tools')
     def tools(request:Request):
         r=runtime(request);return r.bridge.request('catalog',user=r.user)
+    # The research team is a backend extension of this EXISTING Modelmaker, not
+    # an independent agent stack. Assignments are owner supplied; no source is
+    # silently selected and work never starts without an explicit request.
+    @app.get('/api/computer/research-team/sources')
+    def research_sources(request:Request):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).sources()
+    @app.get('/api/computer/research-team/status')
+    def research_status(request:Request):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).status()
+    @app.post('/api/computer/research-team/configure')
+    def research_configure(body:DimensionPlan,request:Request):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).configure(body.assignments)
+    @app.post('/api/computer/research-team/run')
+    def research_run(body:DimensionWork,request:Request):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).run(body.dimension,body.max_passages)
+    @app.get('/api/computer/research-team/export/{dimension}')
+    def research_export(dimension:str,request:Request):
+        from .dimension_research import DimensionResearch
+        return DimensionResearch(runtime(request)).export(dimension)
     @app.get('/api/computer/watch')
     def watch(request:Request):return runtime(request).watch()
     @app.post('/api/computer/file')
