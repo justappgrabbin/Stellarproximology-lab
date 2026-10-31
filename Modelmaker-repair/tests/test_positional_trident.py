@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 
 from assembly.runtime import Assembly
+from assembly.dimension_research import DimensionResearch
 from assembly.positional_trident import SharedTridentPositions, KleinPositionAdapter, POSITIONS
 from semantic_language_maker import NeuralMaker
 
@@ -26,6 +27,12 @@ class OneBackboneFourPositions(unittest.TestCase):
         self.owner=Assembly(self.root/'memory','test-owner')
         self.text='A river flows past the bridge. The observer records the river. '
         self.doc,_=self.owner.register(self.text,'One shared source','user-book')
+        self.research=DimensionResearch(self.owner)
+        self.research.configure_shared([{'dimension':p} for p in POSITIONS])
+        observed=self.research.observe_all_klein(1)
+        for position in POSITIONS:
+            self.assertEqual(observed['results'][position]['attempts'][0]['state'],'processed')
+            self.assertEqual(observed['results'][position]['coverage']['klein_passages_processed'],1)
         self.maker=NeuralMaker()
         trained=self.maker.fit([{'prompt':'What moves?','response':'The river flows.'}],steps=1,seed=13)
         self.assertEqual(trained['steps'],1)
@@ -104,6 +111,17 @@ class OneBackboneFourPositions(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Klein measurements'):
             self.model.train('Design',[dict(row,klein=[[0]])],[hold])
         self.assertTrue(all(self.model.revisions[p] is None for p in POSITIONS))
+        self.assertEqual(self.base_sha,digest(self.base_dir/'weights.pt'))
+
+    def test_missing_real_klein_receipt_blocks_training(self):
+        self.owner.db.execute("""DELETE FROM dimension_klein_observations
+            WHERE user=? AND dimension=? AND document_id=?""",
+            (self.owner.user,'Design',self.doc))
+        self.owner.db.commit()
+        with self.assertRaisesRegex(ValueError,'accepted native Klein analysis'):
+            self.model.train('Design',[self.row('Design')],
+                             [self.row('Design','What changes?','The river.')],steps=1)
+        self.assertIsNone(self.model.revisions['Design'])
         self.assertEqual(self.base_sha,digest(self.base_dir/'weights.pt'))
 
     def test_valid_features_and_native_dimensions(self):
