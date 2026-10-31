@@ -64,14 +64,13 @@ python -m assembly.dimension_research status
 
 Re-running an unchanged configuration preserves prior observations. New text documents become available to all four. If a position's checkpoint or owner-specified instructions change, that position's old research receipts are invalidated and a different Klein state key is used.
 
-For **neural** research, separately provide that position's actual compatible local Transformers/safetensors checkpoint in the manifest, then:
+## Selected architecture: one shared native TRIDENT and four learned positions
 
-```bash
-python -m assembly.dimension_research run --dimension Movement --max-passages 5
-python -m assembly.dimension_research export --dimension Movement
-```
+The owner selected **one shared frozen native TRIDENT base** plus four independent trainable Klein adapters, not four separate Transformer checkpoints. See [SHARED-TRIDENT-POSITIONS.md](SHARED-TRIDENT-POSITIONS.md) for the actual implementation, exact input/approval contract, native tool evidence gate, training CLI, private UI and real-weight regression tests.
 
-A `checkpoint:null` position can do Klein native analysis but **cannot** claim a neural-trained researcher. There is no hidden training step. The root native TRIDENT checkpoint format is *not* interchangeable with the branch's Transformers inference loader: a separate adapter and verified actual training remain necessary.
+In the local Modelmaker choose **Klein research team**, configure the shared sources, process the same sources under all four native Klein positions, then load **one actual trained native TRIDENT**. Review distinct source-anchored training/held-out examples for each position and train the adapters independently. Original TRIDENT weights are frozen and not copied into each position.
+
+The older `assembly.dimension_research run` pathway still accepts a *per-position separate Transformers/safetensors checkpoint*, but it is **not the selected neural build**; do not use it in place of the shared TRIDENT implementation. This legacy path remains for existing compatibility and has not been silently rewritten to accept incompatible TRIDENT checkpoints.
 
 ## Private API in existing Modelmaker
 
@@ -79,10 +78,11 @@ A `checkpoint:null` position can do Klein native analysis but **cannot** claim a
 - `POST /api/computer/research-team/configure` with the manifest body containing `positions`
 - `POST /api/computer/research-team/klein-all` with `max_passages_per_position` (advances all four)
 - `POST /api/computer/research-team/klein` with `dimension`, `max_passages`
-- `POST /api/computer/research-team/run` with `dimension`, `max_passages` (requires compatible checkpoint)
+- `POST /api/computer/research-team/run` with `dimension`, `max_passages` (requires compatible checkpoint) — legacy separate-checkpoint mode, not the selected shared-TRIDENT mode
 - `GET /api/computer/research-team/status`
 - `GET /api/computer/research-team/compare` (optional `document_id`)
 - `GET /api/computer/research-team/export/{dimension}`
+- `GET /api/computer/research-team/trident/status` and `POST /api/computer/research-team/trident/{train,generate,compare}` (selected shared native TRIDENT)
 
 The private app is **not** automatically deployed to Hugging Face. The ZIP references themselves are not a substitute for user-selected research corpora. Imported unreadable/scanned/binary material is not considered complete; the existing upload layer reports its actual extraction limits.
 
